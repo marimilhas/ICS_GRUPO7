@@ -68,6 +68,7 @@ ICS_GRUPO7
 | **Programa de la Materia** | `Programa_ICS_2025.pdf` | `ICS_GRUPO7/` |
 | **Presentaciones de Clase** | `N°_<<Tema_Presentación>>.pdf` | `ICS_GRUPO7/Parcial1/Presentaciones_Clase`<br>`ICS_GRUPO7/Parcial2/Presentaciones_Clase` |
 | **Lista Bibliografía** | `Lista_Bibliografia_2025.pdf` | `ICS_GRUPO7/Parcial1`<br>`ICS_GRUPO7/Parcial2` |
+| **Plan de Gestión de Configuración** | `README.md` | `ICS_GRUPO7` |
 
 ---
 
@@ -86,6 +87,7 @@ ICS_GRUPO7
 | `<<Apellido_Profesor>>` | Apellido del profesor que realizó la observación |
 | `<<Nombre_Componente>>` | Nombre significativo del componente del trabajo |
 | `<<Tema_Clase>>` | Tema abordado en la clase correspondiente |
+| `<<Tema_Presentación>>` | Tema abordado en determinada presentación |
 | `<ext>` | Extensión del archivo (ejemplo: `.pdf`, `.docx`, `.pptx`) |
 | `mm-dd` | Mes y día de la clase a la que corresponde el archivo |
 | **CP** | Caso práctico |
