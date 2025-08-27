@@ -17,7 +17,8 @@
 ---
 
 ## Estructura del repositorio  
-<code><pre>ICS_GRUPO7
+<code><pre>
+ICS_GRUPO7
 |-- Parcial1
 |   |-- Ejercicios_Practicos
 |   |-- Notas_Practico
@@ -35,20 +36,20 @@
 |   |-- TI02_CharlaTED
 |
 |-- Trabajos_Practicos
-    |-- TP01_RequerimientosAgiles_UserStories_NoEvaluable
-    |-- TP02_RequerimientosAgiles_UserStoriesEstimaciones_NoEvaluable
-    |-- TP03_RequerimientosAgiles_UserStoriesEstimacionesMVP_NoEvaluable
-    |-- TP04_SCM_HerramientasDeScm_Evaluable
-    |-- TP05_SCM_UsoDelRepositorio_Evaluable
-    |-- TP06_TDD_Evaluable
-    |-- TP07_SCRUM_EjercicioAplicacion_Evaluable
-    |-- TP08_SCRUM_PlanificacionReleaseSprint_Evaluable
-    |-- TP09_Testing_MetodosDeCajaNega_NoEvaluable
-    |-- TP10_Testing_MetodosDeCajaNega_NoEvaluable
-    |-- TP11_Testing_EjecucionCasosDePrueba_Evaluable
-    |-- TP12_KANBAN_EjercicioDeAplicacion_Evaluable
-    |-- TP13_SCRUM_DinamicaDeRetrospectiva_Evaluable
-    |-- TP14_DesignThinking_PublicidadDeInstagram_Evaluable
+|   |-- TP01_RequerimientosAgiles_UserStories_NoEvaluable
+|   |-- TP02_RequerimientosAgiles_UserStoriesEstimaciones_NoEvaluable
+|   |-- TP03_RequerimientosAgiles_UserStoriesEstimacionesMVP_NoEvaluable
+|   |-- TP04_SCM_HerramientasDeScm_Evaluable
+|   |-- TP05_SCM_UsoDelRepositorio_Evaluable
+|   |-- TP06_TDD_Evaluable
+|   |-- TP07_SCRUM_EjercicioAplicacion_Evaluable
+|   |-- TP08_SCRUM_PlanificacionReleaseSprint_Evaluable
+|   |-- TP09_Testing_MetodosDeCajaNega_NoEvaluable
+|   |-- TP10_Testing_MetodosDeCajaNega_NoEvaluable
+|   |-- TP11_Testing_EjecucionCasosDePrueba_Evaluable
+|   |-- TP12_KANBAN_EjercicioDeAplicacion_Evaluable
+|   |-- TP13_SCRUM_DinamicaDeRetrospectiva_Evaluable
+|   |-- TP14_DesignThinking_PublicidadDeInstagram_Evaluable
 </code></pre>
 
 ## Ítems de Configuración  
