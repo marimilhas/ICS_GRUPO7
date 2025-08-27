@@ -23,12 +23,14 @@ ICS_GRUPO7
 |   |-- Ejercicios_Practicos
 |   |-- Notas_Practico
 |   |-- Notas_Teorico
+|   |-- Presentaciones_Clase
 |   |-- Resumenes
 |
 |-- Parcial2
 |   |-- Ejercicios_Practicos
 |   |-- Notas_Practico
 |   |-- Notas_Teorico
+|   |-- Presentaciones_Clase
 |   |-- Resumenes
 |
 |-- Trabajos_Investigacion
