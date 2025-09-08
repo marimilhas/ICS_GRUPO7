@@ -63,7 +63,7 @@ ICS_GRUPO7
 | **Notas de Clases Prácticas** | `UN°_<<Tema_Clase>>_mm-dd_<<Apellido_Estudiante>>.pdf` | `ICS_GRUPO7/Parcial1/Notas_Practico`<br>`ICS_GRUPO7/Parcial2/Notas_Practico` |
 | **Trabajos Prácticos** | `TPN°_G7_2025_<<Nombre_Componente>>.<ext>` | `ICS_GRUPO7/Trabajos_Practicos/TPN°_<<Tema>>_<<NombreTP>>_<No_Evaluable/Evaluable>` |
 | **Trabajos de Investigación** | `TIN°_G7_2025_<<Nombre_Componente>>.<ext>` | `ICS_GRUPO7/Trabajos_Investigacion/TIN°_<<Nombre_TI>>` |
-| **Correcciones** | `C_dd-mm_<<Apellido_Profesor>>.<ext>` | `ICS_GRUPO7/Trabajos_Practicos/TPN°_<<Tema>>_<<NombreTP>>_<No_Evaluable/Evaluable>` |
+| **Correcciones** | `C_mm-dd_<<Apellido_Profesor>>.<ext>` | `ICS_GRUPO7/Trabajos_Practicos/TPN°_<<Tema>>_<<NombreTP>>_<No_Evaluable/Evaluable>` |
 | **Ejercicios Prácticos** | `CPN°_<<Nombre_Caso_Practico>>.pdf` | `ICS_GRUPO7/Parcial1/Ejercicios_Practicos`<br>`ICS_GRUPO7/Parcial2/Ejercicios_Practicos` |
 | **Programa de la Materia** | `Programa_ICS_2025.pdf` | `ICS_GRUPO7/` |
 | **Presentaciones de Clase** | `N°_<<Tema_Presentación>>.pdf` | `ICS_GRUPO7/Parcial1/Presentaciones_Clase`<br>`ICS_GRUPO7/Parcial2/Presentaciones_Clase` |
