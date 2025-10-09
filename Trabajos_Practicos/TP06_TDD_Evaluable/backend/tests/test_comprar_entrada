@@ -1,0 +1,44 @@
+import pytest
+import mocker
+from datetime import timedelta
+from datetime import date
+
+@pytest.fixture
+def sistema():
+    return Sistema()
+
+def test_comprar_entradas_con_datos_validos_y_pago_tarjeta(sistema):
+    # Prueba el camino feliz de una compra válida.
+    # Verifica que la compra se cree correctamente y que los servicios
+    # externos (pago y email) sean llamados como se espera.
+    
+    # Mockeamos las funciones externas
+    mock_procesar_pago = mocker.patch.object(sistema.mp_service, 'procesar_pago', return_value=True)
+    mock_enviar_email = mocker.patch.object(sistema.email_service, 'enviar_confirmacion', return_value=True)
+    
+    # Precondiciones
+    usuario_valido = {"nombre": "Ana", "apellido": "López", "mail": "analopez@gmail.com"}
+    fecha_valida = date.today() + timedelta(days=1)
+    tipo_pase_valido = {"nombre": "VIP", "precio": 10000}
+    forma_pago_valida = "tarjeta"
+
+    compra, confirmacion = sistema.comprar_entradas(
+        fecha_visita=fecha_valida,
+        cantidad_entradas=2,
+        edades_visitantes=[24, 22],
+        tipo_pase=tipo_pase_valido,
+        forma_pago=forma_pago_valida,
+        usuario=usuario_valido
+    )
+
+    assert isinstance(compra, Compra)
+    assert compra.fecha_visita == fecha_valida
+    assert len(compra.entradas) == 2
+    assert compra.forma_pago == "tarjeta"
+    assert compra.usuario["mail"] == 'analopez@gmail.com'
+    assert confirmacion is True
+    mock_procesar_pago.assert_called_once_with(monto=20000) # 10000 * 2
+    mock_enviar_email.assert_called_once_with(
+        mail='analopez@gmail.com',
+        compra_details=compra.__dict__
+    )
