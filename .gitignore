@@ -71,3 +71,5 @@ Desktop.ini
 *.tar
 *.gz
 *.rar
+
+.venv
