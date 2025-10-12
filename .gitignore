@@ -1,75 +1,77 @@
-# --- Archivos sensibles y de configuración local ---
+# .gitignore principal para varios proyectos (Python, Node, etc.)
+
+# Archivos con secretos y configuración local - NUNCA SUBIR
 .env
-.env.local
-.env.*.local
+.env.*
+!/.env.example
 credentials.json
 *.pem
 *.key
 
-# Excepción: A menudo es útil incluir un archivo de ejemplo.
-!/.env.example
+# Dependencias y Entornos Virtuales
+# ---------------------------------
+# Python
+.venv/
+venv/
+ENV/
 
-
-# --- Dependencias ---
+# Node.js
 node_modules/
-vendor/
 jspm_packages/
 bower_components/
 
+# PHP (por si acaso)
+vendor/
 
-# --- Archivos de Build, Compilación y Paquetes ---
-build/
-dist/
-out/
-public/ # Depende del proyecto, a veces esta carpeta SÍ debe incluirse.
+# Archivos de caché (generados automáticamente)
+# --------------------------------------------
+__pycache__/
+.pytest_cache/
 .parcel-cache/
 .next/
 
+# Archivos de build y compilados
+# --------------------------------
+build/
+dist/
+out/
 
-# --- Logs y Bases de Datos ---
+# Logs y bases de datos locales
+# -----------------------------
 *.log
 logs/
 npm-debug.log*
-yarn-debug.log*
 yarn-error.log*
 *.db
 *.sqlite
 *.sqlite3
 
-
-# --- Archivos de Sistema Operativo y Caché ---
+# Basura del Sistema Operativo
+# ----------------------------
 .DS_Store
-._*
 Thumbs.db
 Desktop.ini
 
-
-# --- Archivos de Configuración de Editores e IDEs ---
+# Archivos de configuración de IDEs y editores
+# --------------------------------------------
 .idea/
 .vscode/
-*.sublime-project
-*.sublime-workspace
 *.suo
 *.user
-*.userosscache
-*.sln.docstates
+*.sublime-*
 
-# Excepción: A veces quieres compartir configuraciones recomendadas del proyecto.
-# Descomenta estas líneas si usas VSCode y quieres compartir extensiones o settings.
-# !.vscode/extensions.json
+# Opcional: descomentar para compartir settings de VSCode con el equipo
 # !.vscode/settings.json
+# !.vscode/extensions.json
 
-
-# --- Archivos temporales y de respaldo del editor ---
-*~
+# Otros
+# -----
+# Archivos temporales de Vim y otros editores
 *.swp
-*.swo
+*~
 
-
-# --- Archivos comprimidos ---
+# Archivos comprimidos
 *.zip
+*.rar
 *.tar
 *.gz
-*.rar
-
-.venv
