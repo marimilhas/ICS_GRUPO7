@@ -19,3 +19,17 @@ class ServicioCompraEntradas:
         # El código simplemente ignora la cantidad excesiva (11) y no lanza la excepción.
         # Esto provoca que el 'pytest.raises(LimiteEntradasExcedidoError)' falle.
         return {"mensaje": "Compra iniciada (Validación de cantidad omitida para el test RED)."}
+    
+    def _calcular_precio_entrada(self, edad: int, tipo_pase: str) -> float:
+        """
+        Calculará el precio de una entrada según edad y tipo de pase.
+        Será implementado en fase GREEN.
+        """
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN")
+    
+    def _calcular_monto_total(self, visitantes: list) -> float:
+        """
+        Calculará el monto total sumando todos los precios individuales.
+        Será implementado en fase GREEN.
+        """
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN")

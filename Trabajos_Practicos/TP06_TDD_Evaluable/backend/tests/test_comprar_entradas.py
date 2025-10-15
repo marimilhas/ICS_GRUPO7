@@ -104,6 +104,42 @@ def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_valido
     with pytest.raises(ParqueCerradoError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
 
+# --- PRUEBAS RED: Cálculo de Montos ---
+# agustina, agustin, jime 
+
+def test_calcular_monto_total_mixto(servicio_compra):
+    """Prueba RED: cálculo de monto con diferentes edades"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 2, "tipo_pase": "Regular"},   # 0
+            {"edad": 8, "tipo_pase": "Regular"},   # 2500
+            {"edad": 35, "tipo_pase": "VIP"},      # 10000
+            {"edad": 65, "tipo_pase": "VIP"}       # 5000
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 17500
+
+def test_calcular_monto_total_todos_gratis(servicio_compra):
+    """Prueba RED: todos menores de 3 años - monto 0"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 1, "tipo_pase": "Regular"},
+            {"edad": 2, "tipo_pase": "VIP"}
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 0
+
+def test_calcular_monto_total_varios_menores(servicio_compra):
+    """Prueba RED: múltiples menores con diferentes pases"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 2, "tipo_pase": "Regular"},   # 0
+            {"edad": 5, "tipo_pase": "Regular"},   # 2500
+            {"edad": 7, "tipo_pase": "VIP"},       # 5000
+            {"edad": 70, "tipo_pase": "Regular"}   # 2500
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 10000
 
 """
 
