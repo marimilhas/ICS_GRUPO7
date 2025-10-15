@@ -5,9 +5,10 @@ from unittest.mock import MagicMock, Mock
 from src.servicio_compra import ServicioCompraEntradas
 
 # Importar las clases y excepciones
-from src.modelo import LimiteEntradasExcedidoError
+from src.modelo import LimiteEntradasExcedidoError, FechaInvalidaError, ParqueCerradoError
 
 # --- FIXTURES (Datos y Mocks para el Aislamiento) ---
+
 
 @pytest.fixture
 def usuario_valido_mock():
@@ -57,7 +58,7 @@ def servicio_compra(mocks_infraestructura):
     """
     return ServicioCompraEntradas(**mocks_infraestructura)
 
-# --- B. PRUEBA RED: Límite de Entradas ---
+# --- PRUEBA RED: Límite de Entradas ---
 
 def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
         # Prueba que la validación falla con más de 10 entradas.
@@ -74,7 +75,50 @@ def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_valido
         with pytest.raises(LimiteEntradasExcedidoError):
             servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
 
+# --- PRUEBA RED: Fecha pasada ---
+
+def test_comprar_entradas_fecha_pasada_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    # Crea una fecha pasada (ej. ayer)
+    fecha_pasada = date.today() - timedelta(days=1)
+
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["fecha_visita"] = fecha_pasada.isoformat()  # <-- Parámetro que causa el fallo
+
+    # Esperamos que el servicio lance la excepción, pero no lo hará (RED)
+    with pytest.raises(FechaInvalidaError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+# --- PRUEBA RED: Fecha Lunes ---
+
+def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    # Encontramos el próximo Lunes
+    hoy = date.today()
+    dias_hasta_lunes = (0 - hoy.weekday() + 7) % 7
+    # Aseguramos que sea futuro, si hoy es Lunes, vamos al próximo
+    if dias_hasta_lunes == 0: dias_hasta_lunes = 7
+    fecha_lunes = hoy + timedelta(days=dias_hasta_lunes)
+
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["fecha_visita"] = fecha_lunes.isoformat()  # <-- Parámetro que causa el fallo
+
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+
 """
+
+def test_validar_parametros_dias_parque_cerrado(sistema):
+        # Prueba que la validación falla con una fecha en un día que el parque está cerrado
+        fechas_invalidas = [
+            date(2025, 12, 25),  
+            date(2026, 1, 1),    
+            date(2025, 11, 3),  # Un lunes futuro al azar
+        ]
+        for f in fechas_invalidas:
+            with pytest.raises(ValueError, match="En esa fecha el parque se encuentra cerrado"):
+                sistema.validar_parametros_compra(fecha=f)
+
+
 def test_validar_parametros_cantidad_valida_no_lanza_error(sistema):
         # Prueba que la validación pasa con una cantidad correcta.
         sistema.validar_parametros_compra(cantidad=5)
@@ -85,7 +129,7 @@ def test_procesar_pago_compra_exitoso(sistema, mocker):
         pago_exitoso, monto = sistema.procesar_pago_compra(cantidad=3, tipo_pase={"nombre": "VIP", "precio": 10000})
         
         assert pago_exitoso is True
-        assert monto == 3000
+        assert monto == 30000
 
 def test_crear_objeto_compra(sistema):
     # Prueba que el objeto Compra se instancia con los datos correctos.
@@ -94,11 +138,11 @@ def test_crear_objeto_compra(sistema):
         "tipo_pase": {"nombre": "VIP", "precio": 10000}, "forma_pago": "tarjeta", "usuario": {"mail": "test@test.com"}
     }
     
-    compra_creada = sistema.crear_objeto_compra(datos, monto_total=2000)
+    compra_creada = sistema.crear_objeto_compra(datos, monto_total=20000)
     
     assert isinstance(compra_creada, Compra)
     assert compra_creada.cantidad_entradas == 2
-    assert compra_creada.monto_total == 2000
+    assert compra_creada.monto_total == 20000
     assert compra_creada.usuario["mail"] == "test@test.com"
 
 def test_comprar_entradas_con_datos_validos_y_pago_tarjeta(sistema):

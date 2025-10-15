@@ -14,5 +14,8 @@ class UsuarioNoRegistradoError(Exception):
 class ParqueCerradoError(Exception):
     pass
 
+class FechaInvalidaError(Exception):
+    pass
+
 class FormaDePagoRequeridaError(Exception):
     pass
