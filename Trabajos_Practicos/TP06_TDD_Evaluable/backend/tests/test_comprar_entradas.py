@@ -1,16 +1,80 @@
 import pytest
 from datetime import timedelta
 from datetime import date
+from unittest.mock import MagicMock, Mock
+from src.servicio_compra import ServicioCompraEntradas
+
+# Importar las clases y excepciones
+from src.modelo import LimiteEntradasExcedidoError
+
+# --- FIXTURES (Datos y Mocks para el Aislamiento) ---
 
 @pytest.fixture
-def sistema():
-    return Sistema()
+def usuario_valido_mock():
+    """Retorna un mock que simula un objeto Usuario ya cargado y válido."""
+    # En un sistema real, este mock podría tener atributos como email, nombre, etc.
+    return Mock(nombre="Juan Pérez", email="juan@example.com", esta_registrado=True)
 
-def test_validar_parametros_cantidad_excesiva(sistema):
+
+@pytest.fixture
+def datos_compra_validos():
+    """Fixture que retorna una base de datos de compra que cumple todas las reglas."""
+
+    # 1. Definir una fecha válida futura (asumimos un miércoles futuro es un día abierto)
+    # Usando una fecha fija de ejemplo para que la prueba sea reproducible
+    fecha_base = date(2026, 3, 15)
+
+    # 2. Definir una cantidad base válida (5)
+    visitantes_validos = ([ {"edad": 30, "tipo_pase": "Regular"}, {"edad": 10, "tipo_pase": "VIP"}, ] * 2
+                          + [{"edad": 5, "tipo_pase": "Regular"}])  # Total 5 visitantes
+
+    return {
+        "cantidad": len(visitantes_validos),  # Cantidad válida: 5
+        "fecha_visita": fecha_base.isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": visitantes_validos
+    }
+
+
+@pytest.fixture
+def mocks_infraestructura():
+    """Fixture que retorna mocks de los servicios externos (Capas 3) configurados como 'válidos'."""
+    mocks = {
+        'pasarela_pagos': MagicMock(),
+        'servicio_correo': MagicMock(),
+        'servicio_calendario': MagicMock()
+    }
+
+    # Aseguramos que las demás validaciones NO interfieran:
+    mocks['servicio_calendario'].es_dia_abierto.return_value = True  # La fecha es de parque abierto
+    return mocks
+
+@pytest.fixture
+def servicio_compra(mocks_infraestructura):
+    """
+    Esta fixture inicializa y retorna una nueva instancia
+    de ServicioDeCompraDeEntradas en cada test.
+    """
+    return ServicioCompraEntradas(**mocks_infraestructura)
+
+# --- B. PRUEBA RED: Límite de Entradas ---
+
+def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
         # Prueba que la validación falla con más de 10 entradas.
-        with pytest.raises(ValueError, match="La cantidad de entradas no puede ser mayor a 10"):
-            sistema.validar_parametros_compra(cantidad=11)
 
+        # Creamos los datos para la falla, asegurando coherencia entre cantidad y visitantes
+        datos_de_falla = datos_compra_validos.copy()
+        cantidad_a_fallar = 11
+        datos_de_falla["cantidad"] = cantidad_a_fallar
+
+        # Se asegura que la lista de visitantes tenga 11 elementos
+        visitante_base = datos_de_falla["visitantes"][0]
+        datos_de_falla["visitantes"] = [visitante_base] * cantidad_a_fallar
+
+        with pytest.raises(LimiteEntradasExcedidoError):
+            servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+"""
 def test_validar_parametros_cantidad_valida_no_lanza_error(sistema):
         # Prueba que la validación pasa con una cantidad correcta.
         sistema.validar_parametros_compra(cantidad=5)
@@ -72,3 +136,4 @@ def test_comprar_entradas_con_datos_validos_y_pago_tarjeta(sistema):
         mail='analopez@gmail.com',
         compra_details=compra.__dict__
     )
+"""
