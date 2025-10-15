@@ -2,6 +2,7 @@ import pytest
 from datetime import timedelta
 from datetime import date
 
+
 @pytest.fixture
 def sistema():
     return Sistema()
@@ -10,6 +11,30 @@ def test_validar_parametros_cantidad_excesiva(sistema):
         # Prueba que la validación falla con más de 10 entradas.
         with pytest.raises(ValueError, match="La cantidad de entradas no puede ser mayor a 10"):
             sistema.validar_parametros_compra(cantidad=11)
+
+def test_validar_parametros_dias_parque_cerrado(sistema):
+        # Prueba que la validación falla con una fecha en un día que el parque está cerrado
+        fechas_invalidas = [
+            date(2025, 12, 25),  
+            date(2026, 1, 1),    
+            date(2025, 11, 3),  # Un lunes futuro al azar
+        ]
+        for f in fechas_invalidas:
+            with pytest.raises(ValueError, match="En esa fecha el parque se encuentra cerrado"):
+                sistema.validar_parametros_compra(fecha=f)
+
+def test_validar_parametros_visita_pasada(sistema):
+        # Prueba que la validación falla con una fecha anterior a la actual, o en la fecha actual pero fuera de hora
+        ahora = date.today()
+
+        fechas_invalidas = [
+            ahora - timedelta(days=1),   # Ayer
+            ahora  # Comprobar al validar la compra si se está en rango horario
+        ]
+
+        for f in fechas_invalidas:
+            with pytest.raises(ValueError, match="Es una fecha pasada"):
+                sistema.validar_parametros_compra(fecha=f, hora=20)
 
 def test_validar_parametros_cantidad_valida_no_lanza_error(sistema):
         # Prueba que la validación pasa con una cantidad correcta.
@@ -21,7 +46,7 @@ def test_procesar_pago_compra_exitoso(sistema, mocker):
         pago_exitoso, monto = sistema.procesar_pago_compra(cantidad=3, tipo_pase={"nombre": "VIP", "precio": 10000})
         
         assert pago_exitoso is True
-        assert monto == 3000
+        assert monto == 30000
 
 def test_crear_objeto_compra(sistema):
     # Prueba que el objeto Compra se instancia con los datos correctos.
@@ -30,11 +55,11 @@ def test_crear_objeto_compra(sistema):
         "tipo_pase": {"nombre": "VIP", "precio": 10000}, "forma_pago": "tarjeta", "usuario": {"mail": "test@test.com"}
     }
     
-    compra_creada = sistema.crear_objeto_compra(datos, monto_total=2000)
+    compra_creada = sistema.crear_objeto_compra(datos, monto_total=20000)
     
     assert isinstance(compra_creada, Compra)
     assert compra_creada.cantidad_entradas == 2
-    assert compra_creada.monto_total == 2000
+    assert compra_creada.monto_total == 20000
     assert compra_creada.usuario["mail"] == "test@test.com"
 
 def test_comprar_entradas_con_datos_validos_y_pago_tarjeta(sistema):
