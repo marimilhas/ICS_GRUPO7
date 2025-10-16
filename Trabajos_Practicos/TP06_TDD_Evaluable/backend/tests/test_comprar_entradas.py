@@ -148,24 +148,24 @@ def test_calcular_monto_total_varios_menores(servicio_compra):
 def test_validar_fecha_dia_habil_pasa(servicio_compra):
     fecha_habil = datetime(2025, 10, 22, 12, 0, 0)  # Miércoles
     try:
-        servicio_compra._validar_fecha_visita(fecha_habil)
+        servicio_compra._validar_fecha_hora_visita(fecha_habil)
     except ParqueCerradoError:
         pytest.fail("La validación no debería haber fallado en un día hábil.")
 
 def test_validar_fecha_25_diciembre_falla(servicio_compra):
     fecha_navidad = datetime(2025, 12, 25, 12, 0, 0)
     with pytest.raises(ParqueCerradoError):
-        servicio_compra._validar_fecha_visita(fecha_navidad)
+        servicio_compra._validar_fecha_hora_visita(fecha_navidad)
 
 def test_validar_fecha_1_enero_falla(servicio_compra):
     fecha_ano_nuevo = datetime(2026, 1, 1, 12, 0, 0)
     with pytest.raises(ParqueCerradoError):
-        servicio_compra._validar_fecha_visita(fecha_ano_nuevo)
+        servicio_compra._validar_fecha_hora_visita(fecha_ano_nuevo)
 
 def test_validar_fecha_lunes_feriado_falla(servicio_compra):
     fecha_especial = datetime(2024, 1, 1, 12, 0, 0) # 1 de Enero de 2024 fue lunes
     with pytest.raises(ParqueCerradoError):
-        servicio_compra._validar_fecha_visita(fecha_especial)
+        servicio_compra._validar_fecha_hora_visita(fecha_especial)
 
 def test_validar_horario_antes_de_abrir_falla(servicio_compra):
     fecha_valida = datetime(2025, 10, 22, 8, 59, 59)
@@ -175,34 +175,34 @@ def test_validar_horario_antes_de_abrir_falla(servicio_compra):
 def test_validar_horario_al_abrir_pasa(servicio_compra):
     fecha_valida = datetime(2025, 10, 22, 9, 0, 0)
     try:
-        servicio_compra._validar_fecha_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
     except ParqueCerradoError:
         pytest.fail("La validación no debería haber fallado a la hora de apertura.")
 
 def test_validar_horario_durante_el_dia_pasa(servicio_compra):
     fecha_valida = datetime(2025, 10, 22, 14, 30, 0)
     try:
-        servicio_compra._validar_fecha_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
     except ParqueCerradoError:
         pytest.fail("La validación no debería haber fallado durante el horario hábil.")
 
 def test_validar_horario_antes_de_cerrar_pasa(servicio_compra):
     fecha_valida = datetime(2025, 10, 22, 18, 59, 59)
     try:
-        servicio_compra._validar_fecha_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
     except ParqueCerradoError:
         pytest.fail("La validación no debería haber fallado justo antes de la hora de cierre.")
 
 def test_validar_horario_al_cerrar_falla(servicio_compra):
     fecha_valida = datetime(2025, 10, 22, 19, 0, 0)
     with pytest.raises(ParqueCerradoError):
-        servicio_compra._validar_fecha_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
 
 # LO DEJO COMENTADO POR LAS DUDAS, PQ YA LO HIZO JULI EN REALIDAD
 # def test_validar_fecha_falla_en_lunes(servicio_compra):
 #     fecha_lunes = datetime(2025, 10, 20, 12, 0, 0)  
 #     with pytest.raises(ParqueCerradoError):
-#         servicio_compra._validar_fecha_visita(fecha_lunes)
+#         servicio_compra._validar_fecha_hora_visita(fecha_lunes)
 """
 
 def test_validar_parametros_dias_parque_cerrado(sistema):
