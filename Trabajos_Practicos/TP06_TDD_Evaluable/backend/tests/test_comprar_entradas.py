@@ -109,6 +109,28 @@ def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_valido
 # --- PRUEBAS RED: Cálculo de Montos ---
 # agustina, agustin, jime 
 
+def test_calcular_precio_adulto_regular(servicio_compra):
+    """Prueba RED: adulto (30 años) con pase Regular paga precio completo"""
+    with pytest.raises(AttributeError):
+        precio = servicio_compra._calcular_precio_entrada(30, "Regular")
+        assert precio == 5000
+
+def test_calcular_precio_adulto_vip(servicio_compra):
+    """Prueba RED: adulto (30 años) con pase VIP paga precio completo"""
+    with pytest.raises(AttributeError):
+        precio = servicio_compra._calcular_precio_entrada(30, "VIP")
+        assert precio == 10000
+
+def test_calcular_monto_total_todos_adultos(servicio_compra):
+    """Prueba RED: todos adultos - monto completo"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 25, "tipo_pase": "Regular"},  # 5000
+            {"edad": 30, "tipo_pase": "VIP"}       # 10000
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total==15000
+
 def test_calcular_monto_total_mixto(servicio_compra):
     """Prueba RED: cálculo de monto con diferentes edades"""
     with pytest.raises(AttributeError):
