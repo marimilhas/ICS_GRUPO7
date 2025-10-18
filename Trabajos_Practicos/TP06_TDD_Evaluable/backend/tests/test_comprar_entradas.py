@@ -165,6 +165,42 @@ def test_calcular_monto_total_varios_menores(servicio_compra):
         monto_total = servicio_compra._calcular_monto_total(visitantes)
         assert monto_total == 10000
 
+def test_calcular_monto_total_solo_regular(servicio_compra):
+    """Prueba RED: grupo donde todos eligen Regular"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 5, "tipo_pase": "Regular"},   # 2500
+            {"edad": 30, "tipo_pase": "Regular"},  # 5000
+            {"edad": 65, "tipo_pase": "Regular"}   # 2500
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 10000  # 2500 + 5000 + 2500
+
+def test_calcular_monto_total_limites_edad(servicio_compra):
+    """Prueba RED: casos en los límites de edad (3, 10, 60 años)"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 3, "tipo_pase": "Regular"},   # 2500 (justo 3 años)
+            {"edad": 10, "tipo_pase": "VIP"},      # 10000 (justo 10 años)
+            {"edad": 60, "tipo_pase": "Regular"}   # 2500 (justo 60 años)
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 15000  # 2500 + 10000 + 2500
+
+def test_calcular_monto_total_mezcla_extrema(servicio_compra):
+    """Prueba RED: mezcla extrema de edades y tipos de pase"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 1, "tipo_pase": "VIP"},       # 0
+            {"edad": 2, "tipo_pase": "Regular"},   # 0
+            {"edad": 99, "tipo_pase": "VIP"},      # 5000
+            {"edad": 100, "tipo_pase": "Regular"}, # 2500
+            {"edad": 35, "tipo_pase": "VIP"},      # 10000
+            {"edad": 35, "tipo_pase": "Regular"}   # 5000
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 22500  # 0 + 0 + 5000 + 2500 + 10000 + 5000
+
 # --- PRUEBAS (estas parecen estar en fase GREEN, las mantengo pero comento) ---
 """
 def test_validar_parametros_cantidad_valida_no_lanza_error(sistema):
