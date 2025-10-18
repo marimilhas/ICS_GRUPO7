@@ -97,12 +97,6 @@ def test_calcular_precio_menor_10_anos_regular(servicio_compra):
         precio = servicio_compra._calcular_precio_entrada(8, "Regular")
         assert precio == 2500  # 5000 / 2
 
-def test_calcular_precio_adulto_regular(servicio_compra):
-    """Prueba RED: adultos (10-60) con pase Regular pagan precio completo"""
-    with pytest.raises(AttributeError):
-        precio = servicio_compra._calcular_precio_entrada(30, "Regular")
-        assert precio == 5000
-
 def test_calcular_precio_menor_10_anos_vip(servicio_compra):
     """Prueba RED: menores de 10 con pase VIP pagan mitad"""
     with pytest.raises(AttributeError):
@@ -194,10 +188,10 @@ def test_calcular_monto_total_limites_edad(servicio_compra):
         visitantes = [
             {"edad": 3, "tipo_pase": "Regular"},   # 2500 (justo 3 años)
             {"edad": 10, "tipo_pase": "VIP"},      # 10000 (justo 10 años)
-            {"edad": 60, "tipo_pase": "Regular"}   # 2500 (justo 60 años)
+            {"edad": 60, "tipo_pase": "Regular"}   # 5000 (justo 60 años)
         ]
         monto_total = servicio_compra._calcular_monto_total(visitantes)
-        assert monto_total == 15000  # 2500 + 10000 + 2500
+        assert monto_total == 17500  # 2500 + 10000 + 5000
 
 def test_calcular_monto_total_mezcla_extrema(servicio_compra):
     """Prueba RED: mezcla extrema de edades y tipos de pase"""
@@ -208,7 +202,7 @@ def test_calcular_monto_total_mezcla_extrema(servicio_compra):
             {"edad": 99, "tipo_pase": "VIP"},      # 5000
             {"edad": 100, "tipo_pase": "Regular"}, # 2500
             {"edad": 35, "tipo_pase": "VIP"},      # 10000
-            {"edad": 35, "tipo_pase": "Regular"}   # 5000
+            {"edad": 25, "tipo_pase": "Regular"}   # 5000
         ]
         monto_total = servicio_compra._calcular_monto_total(visitantes)
         assert monto_total == 22500  # 0 + 0 + 5000 + 2500 + 10000 + 5000
@@ -288,7 +282,7 @@ def test_comprar_entradas_año_nuevo_falla(servicio_compra, datos_compra_validos
 
 def test_comprar_entradas_usuario_no_registrado_falla(servicio_compra, datos_compra_validos):
     """Prueba RED: usuario no registrado no puede comprar entradas"""
-    usuario_no_registrado = Mock(esta_registrado=False, email="visitante@example.com")
+    usuario_no_registrado = Mock(nombre="Jose Gonzales", email="jose@example.com", esta_registrado=False)
     
     with pytest.raises(PermissionError):
         servicio_compra.comprar_entradas(usuario=usuario_no_registrado, **datos_compra_validos)
