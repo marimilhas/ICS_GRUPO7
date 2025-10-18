@@ -19,3 +19,15 @@ class FechaInvalidaError(Exception):
 
 class FormaDePagoRequeridaError(Exception):
     pass
+
+class PermissionError(Exception):
+    """Para cuando el usuario no tiene permisos"""
+    pass
+
+class TimeoutError(Exception):
+    """Para casos de timeout"""
+    pass
+
+class ConnectionError(Exception):
+    """Para errores de conexión"""
+    pass

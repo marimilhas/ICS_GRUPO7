@@ -91,6 +91,18 @@ def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_valido
 
 # --- PRUEBAS RED: Cálculo de Precios y Montos ---
 
+def test_calcular_precio_menor_10_anos_regular(servicio_compra):
+    """Prueba RED: menores de 10 con pase Regular pagan mitad"""
+    with pytest.raises(AttributeError):
+        precio = servicio_compra._calcular_precio_entrada(8, "Regular")
+        assert precio == 2500  # 5000 / 2
+
+def test_calcular_precio_adulto_regular(servicio_compra):
+    """Prueba RED: adultos (10-60) con pase Regular pagan precio completo"""
+    with pytest.raises(AttributeError):
+        precio = servicio_compra._calcular_precio_entrada(30, "Regular")
+        assert precio == 5000
+
 def test_calcular_precio_menor_10_anos_vip(servicio_compra):
     """Prueba RED: menores de 10 con pase VIP pagan mitad"""
     with pytest.raises(AttributeError):
@@ -200,6 +212,86 @@ def test_calcular_monto_total_mezcla_extrema(servicio_compra):
         ]
         monto_total = servicio_compra._calcular_monto_total(visitantes)
         assert monto_total == 22500  # 0 + 0 + 5000 + 2500 + 10000 + 5000
+
+# --- PRUEBAS RED: Validación de Forma de Pago ---
+
+def test_comprar_entradas_sin_forma_pago_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar sin seleccionar forma de pago debe fallar"""
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["tipo_pago"] = None
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_forma_pago_efectivo_valida(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con forma de pago efectivo debe ser válido"""
+    with pytest.raises(AttributeError):
+        datos_efectivo = datos_compra_validos.copy()
+        datos_efectivo["tipo_pago"] = "Efectivo"
+        
+        # Mockear dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock()
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_efectivo)
+        
+        # Verificar que NO se llamó a la pasarela de pagos
+        servicio_compra.pasarela_pagos.procesar_pago.assert_not_called()
+        # Verificar que SÍ se envió el email
+        servicio_compra.servicio_correo.enviar_confirmacion.assert_called_once()
+
+def test_comprar_entradas_forma_pago_tarjeta_valida(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con forma de pago tarjeta debe procesar pago"""
+    with pytest.raises(AttributeError):
+        datos_tarjeta = datos_compra_validos.copy()
+        datos_tarjeta["tipo_pago"] = "Tarjeta"
+        
+        # Mockear dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_tarjeta)
+        
+        # Verificar que SÍ se llamó a la pasarela de pagos
+        servicio_compra.pasarela_pagos.procesar_pago.assert_called_once()
+        servicio_compra.servicio_correo.enviar_confirmacion.assert_called_once()
+
+# --- PRUEBAS RED: Días Festivos ---
+
+def test_comprar_entradas_navidad_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar para 25 de diciembre debe fallar"""
+    navidad = date(date.today().year, 12, 25)
+    # Si la navidad ya pasó este año, usar la del próximo
+    if navidad < date.today():
+        navidad = date(date.today().year + 1, 12, 25)
+    
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["fecha_visita"] = navidad.isoformat()
+    
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_año_nuevo_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar para 1ero de enero debe fallar"""
+    año_nuevo = date(date.today().year, 1, 1)
+    # Si ya pasó el 1ero de enero, usar el del próximo año
+    if año_nuevo < date.today():
+        año_nuevo = date(date.today().year + 1, 1, 1)
+    
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["fecha_visita"] = año_nuevo.isoformat()
+    
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+# --- PRUEBAS RED: Usuario No Registrado ---
+
+def test_comprar_entradas_usuario_no_registrado_falla(servicio_compra, datos_compra_validos):
+    """Prueba RED: usuario no registrado no puede comprar entradas"""
+    usuario_no_registrado = Mock(esta_registrado=False, email="visitante@example.com")
+    
+    with pytest.raises(PermissionError):
+        servicio_compra.comprar_entradas(usuario=usuario_no_registrado, **datos_compra_validos)
 
 # --- PRUEBAS (estas parecen estar en fase GREEN, las mantengo pero comento) ---
 """
