@@ -287,6 +287,90 @@ def test_comprar_entradas_usuario_no_registrado_falla(servicio_compra, datos_com
     with pytest.raises(PermissionError):
         servicio_compra.comprar_entradas(usuario=usuario_no_registrado, **datos_compra_validos)
 
+# -- PRUEBAS RED: Validaciones de estructura y datos ---
+
+def test_comprar_entradas_cantidad_inconsistente_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: cantidad no coincide con visitantes debe fallar"""
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["cantidad"] = 3
+    datos_de_falla["visitantes"] = datos_compra_validos["visitantes"][:2]  # Solo 2 visitantes
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_edad_negativa_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: edad negativa debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": -5, "tipo_pase": "Regular"}]
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_edad_muy_alta_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: edad muy alta (mayor a 150) debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 200, "tipo_pase": "Regular"}]
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_tipo_pase_invalido_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: tipo de pase inválido debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 25, "tipo_pase": "Premium"}]  # Tipo inválido
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_datos_visitante_incompletos_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: datos de visitante incompletos debe fallar"""
+    datos_incompletos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 25}]  # Falta tipo_pase
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_incompletos)
+
+def test_comprar_entradas_edad_string_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: edad como string debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": "veinticinco", "tipo_pase": "Regular"}]  # Edad como string
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_tipo_pase_null_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: tipo pase null debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 25, "tipo_pase": None}]
+    }
+        
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+
 # --- PRUEBAS (estas parecen estar en fase GREEN, las mantengo pero comento) ---
 """
 def test_validar_parametros_cantidad_valida_no_lanza_error(sistema):
