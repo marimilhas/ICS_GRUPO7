@@ -188,10 +188,10 @@ def test_calcular_monto_total_limites_edad(servicio_compra):
         visitantes = [
             {"edad": 3, "tipo_pase": "Regular"},   # 2500 (justo 3 años)
             {"edad": 10, "tipo_pase": "VIP"},      # 10000 (justo 10 años)
-            {"edad": 60, "tipo_pase": "Regular"}   # 5000 (justo 60 años)
+            {"edad": 60, "tipo_pase": "Regular"}   # 2500 (justo 60 años)
         ]
         monto_total = servicio_compra._calcular_monto_total(visitantes)
-        assert monto_total == 17500  # 2500 + 10000 + 5000
+        assert monto_total == 15000  # 2500 + 10000 + 2500
 
 def test_calcular_monto_total_mezcla_extrema(servicio_compra):
     """Prueba RED: mezcla extrema de edades y tipos de pase"""
