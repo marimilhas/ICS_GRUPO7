@@ -1,4 +1,5 @@
 import pytest
+import datetime
 from datetime import timedelta
 from datetime import date
 from unittest.mock import MagicMock, Mock
@@ -48,7 +49,7 @@ def servicio_compra(mocks_infraestructura):
     """Fixture que inicializa y retorna una nueva instancia de ServicioCompraEntradas."""
     return ServicioCompraEntradas(**mocks_infraestructura)
 
-# --- PRUEBAS RED: Validación de Parámetros ---
+# --- Pruebas unitarias: Validación de cantidad de entradas ---
 
 def test_validar_cantidad_mayor_a_10_falla(servicio_compra):
     """Prueba: la validación falla con más de 10 entradas."""
@@ -96,42 +97,65 @@ def test_validar_cantidad_limite_exacto_10_pasa(servicio_compra):
     except (LimiteEntradasExcedidoError, ValueError):
         pytest.fail("La validación no debería haber fallado con la cantidad límite de 10.")
         
-# ↓↓↓↓↓↓↓↓↓↓ Revisar: prueba comprar_entradas, no _validar_cantidad ↓↓↓↓↓↓↓↓↓↓
-def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar más de 10 entradas debe fallar."""
-    datos_de_falla = datos_compra_validos.copy()
-    cantidad_a_fallar = 11
-    datos_de_falla["cantidad"] = cantidad_a_fallar
-    visitante_base = datos_de_falla["visitantes"][0]
-    datos_de_falla["visitantes"] = [visitante_base] * cantidad_a_fallar
+# --- Pruebas unitarias: Validación de fecha y hora ---
 
-    with pytest.raises(LimiteEntradasExcedidoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-
-# ↓↓↓↓↓↓↓↓↓↓ Revisar: prueba comprar_entradas, no _validar_cantidad ↓↓↓↓↓↓↓↓↓↓
-def test_comprar_entradas_fecha_pasada_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con fecha pasada debe fallar."""
-    fecha_pasada = date.today() - timedelta(days=1)
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["fecha_visita"] = fecha_pasada.isoformat()
-
-    with pytest.raises(FechaInvalidaError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-
-# ↓↓↓↓↓↓↓↓↓↓ Revisar: prueba comprar_entradas, no _validar_cantidad ↓↓↓↓↓↓↓↓↓↓
-def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar para un lunes debe fallar (parque cerrado)."""
-    hoy = date.today()
-    dias_hasta_lunes = (0 - hoy.weekday() + 7) % 7
-    if dias_hasta_lunes == 0: 
-        dias_hasta_lunes = 7
-    fecha_lunes = hoy + timedelta(days=dias_hasta_lunes)
-
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["fecha_visita"] = fecha_lunes.isoformat()
-
+def test_validar_fecha_dia_habil_pasa(servicio_compra):
+    fecha_habil = datetime(2025, 10, 22, 12, 0, 0)  # Miércoles
+    try:
+        servicio_compra._validar_fecha_hora_visita(fecha_habil)
+    except ParqueCerradoError:
+        pytest.fail("La validación no debería haber fallado en un día hábil.")
+        
+def test_validar_fecha_falla_en_lunes(servicio_compra):
+     fecha_lunes = datetime(2025, 10, 20, 12, 0, 0)  
+     with pytest.raises(ParqueCerradoError):
+         servicio_compra._validar_fecha_hora_visita(fecha_lunes)
+         
+def test_validar_fecha_25_diciembre_falla(servicio_compra):
+    fecha_navidad = datetime(2025, 12, 25, 12, 0, 0)
     with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+        servicio_compra._validar_fecha_hora_visita(fecha_navidad)
+
+def test_validar_fecha_1_enero_falla(servicio_compra):
+    fecha_ano_nuevo = datetime(2026, 1, 1, 12, 0, 0)
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra._validar_fecha_hora_visita(fecha_ano_nuevo)
+
+def test_validar_fecha_lunes_feriado_falla(servicio_compra):
+    fecha_especial = datetime(2024, 1, 1, 12, 0, 0) # 1 de Enero de 2024 fue lunes
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra._validar_fecha_hora_visita(fecha_especial)
+
+def test_validar_horario_antes_de_abrir_falla(servicio_compra):
+    fecha_valida = datetime(2025, 10, 22, 8, 59, 59)
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra._validar_fecha_visita(fecha_valida)
+
+def test_validar_horario_al_abrir_pasa(servicio_compra):
+    fecha_valida = datetime(2025, 10, 22, 9, 0, 0)
+    try:
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+    except ParqueCerradoError:
+        pytest.fail("La validación no debería haber fallado a la hora de apertura.")
+
+def test_validar_horario_durante_el_dia_pasa(servicio_compra):
+    fecha_valida = datetime(2025, 10, 22, 14, 30, 0)
+    try:
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+    except ParqueCerradoError:
+        pytest.fail("La validación no debería haber fallado durante el horario hábil.")
+
+def test_validar_horario_antes_de_cerrar_pasa(servicio_compra):
+    fecha_valida = datetime(2025, 10, 22, 18, 59, 59)
+    try:
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+    except ParqueCerradoError:
+        pytest.fail("La validación no debería haber fallado justo antes de la hora de cierre.")
+
+def test_validar_horario_al_cerrar_falla(servicio_compra):
+    fecha_valida = datetime(2025, 10, 22, 19, 0, 0)
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra._validar_fecha_hora_visita(fecha_valida)
 
 # --- PRUEBAS RED: Cálculo de Precios y Montos ---
 
@@ -500,6 +524,44 @@ def test_comprar_entradas_tipo_pase_null_falla(servicio_compra, usuario_valido_m
     with pytest.raises(ValueError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
 
+
+# Los siguientes tests creo q están mal porque están probando comprar_entradas, no _validar_fecha_hora_visita, _validad_cantidad, etc. Los implementé correctamente. De todas formas, los dejo comentados por si me equivoco. 
+#                                                                       Mari.
+"""
+def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    #Prueba RED: comprar más de 10 entradas debe fallar.
+    datos_de_falla = datos_compra_validos.copy()
+    cantidad_a_fallar = 11
+    datos_de_falla["cantidad"] = cantidad_a_fallar
+    visitante_base = datos_de_falla["visitantes"][0]
+    datos_de_falla["visitantes"] = [visitante_base] * cantidad_a_fallar
+
+    with pytest.raises(LimiteEntradasExcedidoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_fecha_pasada_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    #Prueba RED: comprar con fecha pasada debe fallar.
+    fecha_pasada = date.today() - timedelta(days=1)
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["fecha_visita"] = fecha_pasada.isoformat()
+
+    with pytest.raises(FechaInvalidaError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    #Prueba RED: comprar para un lunes debe fallar (parque cerrado).
+    hoy = date.today()
+    dias_hasta_lunes = (0 - hoy.weekday() + 7) % 7
+    if dias_hasta_lunes == 0: 
+        dias_hasta_lunes = 7
+    fecha_lunes = hoy + timedelta(days=dias_hasta_lunes)
+
+    datos_de_falla = datos_compra_validos.copy()
+    datos_de_falla["fecha_visita"] = fecha_lunes.isoformat()
+
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+"""
 
 # --- PRUEBAS (estas parecen estar en fase GREEN, las mantengo pero comento) ---
 """
