@@ -525,6 +525,37 @@ def test_comprar_entradas_tipo_pase_null_falla(servicio_compra, usuario_valido_m
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
 
 
+# --- PRUEBAS RED: Edge Cases de Negocio ---
+
+def test_calcular_precio_edad_cero_gratis(servicio_compra):
+    """Prueba RED: edad 0 años debe ser gratis"""
+    with pytest.raises(AttributeError):
+        precio = servicio_compra._calcular_precio_entrada(0, "VIP")
+        assert precio == 0
+
+def test_calcular_precio_edad_un_ano_gratis(servicio_compra):
+    """Prueba RED: edad 1 año debe ser gratis"""
+    with pytest.raises(AttributeError):
+        precio = servicio_compra._calcular_precio_entrada(1, "Regular")
+        assert precio == 0
+
+# --- PRUEBAS RED: Validación de Formato Email ---
+
+def test_comprar_entradas_email_usuario_invalido_falla(servicio_compra, datos_compra_validos):
+    """Prueba RED: email de usuario inválido debe fallar"""
+    usuario_email_invalido = Mock(esta_registrado=True, email="email_invalido")
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_email_invalido, **datos_compra_validos)
+
+def test_comprar_entradas_email_usuario_vacio_falla(servicio_compra, datos_compra_validos):
+    """Prueba RED: email de usuario vacío debe fallar"""
+    usuario_email_vacio = Mock(esta_registrado=True, email="")
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_email_vacio, **datos_compra_validos)
+
+
 # Los siguientes tests creo q están mal porque están probando comprar_entradas, no _validar_fecha_hora_visita, _validad_cantidad, etc. Los implementé correctamente. De todas formas, los dejo comentados por si me equivoco. 
 #                                                                       Mari.
 """
