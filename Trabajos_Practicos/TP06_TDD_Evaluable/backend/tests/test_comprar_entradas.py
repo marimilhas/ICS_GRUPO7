@@ -50,11 +50,53 @@ def servicio_compra(mocks_infraestructura):
 
 # --- PRUEBAS RED: Validación de Parámetros ---
 
-def test_validar_parametros_cantidad_excesiva(sistema):
-    """Prueba RED: la validación falla con más de 10 entradas."""
-    with pytest.raises(ValueError, match="La cantidad de entradas no puede ser mayor a 10"):
-        sistema.validar_parametros_compra(cantidad=11)
+def test_validar_cantidad_mayor_a_10_falla(servicio_compra):
+    """Prueba: la validación falla con más de 10 entradas."""
+    cantidad_invalida = 11
+    visitantes_mock = [{}] * cantidad_invalida
+    with pytest.raises(LimiteEntradasExcedidoError, match="La cantidad de entradas no puede ser mayor a 10."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
 
+def test_validar_cantidad_cero_falla(servicio_compra):
+    """Prueba: la validación falla con 0 entradas."""
+    cantidad_invalida = 0
+    visitantes_mock = []
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser al menos 1."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
+
+def test_validar_cantidad_negativa_negativa(servicio_compra):
+    """Prueba: la validación falla con cantidad negativa de entradas."""
+    cantidad_invalida = -1
+    visitantes_mock = []
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser al menos 1."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
+
+def test_validar_cantidad_no_coincide_con_visitantes_falla(servicio_compra):
+    """Prueba: la validación falla si la cantidad no coincide con el nro de visitantes."""
+    cantidad_valida = 5
+    visitantes_incorrectos = [{}] * 3 
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser igual al nro de visitantes."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_valida, visitantes=visitantes_incorrectos)
+
+def test_validar_cantidad_datos_validos_pasa(servicio_compra):
+    """Prueba: la validación pasa si la cantidad está entre 1-10 y coincide con visitantes."""
+    cantidad_valida = 7
+    visitantes_validos = [{}] * cantidad_valida
+    try:
+        servicio_compra._validar_cantidad(cantidad=cantidad_valida, visitantes=visitantes_validos)
+    except (LimiteEntradasExcedidoError, ValueError):
+        pytest.fail("La validación no debería haber fallado con datos válidos.")
+
+def test_validar_cantidad_limite_exacto_10_pasa(servicio_compra):
+    """Prueba: la validación pasa si la cantidad es exactamente 10 y coincide con visitantes."""
+    cantidad_limite = 10
+    visitantes_validos = [{}] * cantidad_limite
+    try:
+        servicio_compra._validar_cantidad(cantidad=cantidad_limite, visitantes=visitantes_validos)
+    except (LimiteEntradasExcedidoError, ValueError):
+        pytest.fail("La validación no debería haber fallado con la cantidad límite de 10.")
+        
+# ↓↓↓↓↓↓↓↓↓↓ Revisar: prueba comprar_entradas, no _validar_cantidad ↓↓↓↓↓↓↓↓↓↓
 def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
     """Prueba RED: comprar más de 10 entradas debe fallar."""
     datos_de_falla = datos_compra_validos.copy()
@@ -66,6 +108,7 @@ def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_valido
     with pytest.raises(LimiteEntradasExcedidoError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
 
+# ↓↓↓↓↓↓↓↓↓↓ Revisar: prueba comprar_entradas, no _validar_cantidad ↓↓↓↓↓↓↓↓↓↓
 def test_comprar_entradas_fecha_pasada_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
     """Prueba RED: comprar con fecha pasada debe fallar."""
     fecha_pasada = date.today() - timedelta(days=1)
@@ -75,6 +118,7 @@ def test_comprar_entradas_fecha_pasada_falla(servicio_compra, datos_compra_valid
     with pytest.raises(FechaInvalidaError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
 
+# ↓↓↓↓↓↓↓↓↓↓ Revisar: prueba comprar_entradas, no _validar_cantidad ↓↓↓↓↓↓↓↓↓↓
 def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
     """Prueba RED: comprar para un lunes debe fallar (parque cerrado)."""
     hoy = date.today()
