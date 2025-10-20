@@ -157,6 +157,17 @@ def test_validar_horario_al_cerrar_falla(servicio_compra):
     with pytest.raises(ParqueCerradoError):
         servicio_compra._validar_fecha_hora_visita(fecha_valida)
 
+def test_validar_fecha_pasada_falla(servicio_compra):
+    fecha_pasada = datetime(2024, 10, 22, 12, 0, 0) 
+
+    with pytest.raises(ValueError) as excinfo:
+        servicio_compra._validar_fecha_hora_visita(fecha_pasada)
+
+def test_validar_fecha_futura_pasa(servicio_compra):
+    fecha_futura = datetime(2026, 10, 22, 12, 0, 0)
+
+    servicio_compra._validar_fecha_hora_visita(fecha_futura)
+
 # --- PRUEBAS RED: Cálculo de Precios y Montos ---
 
 def test_calcular_precio_menor_3_anos_regular(servicio_compra):
@@ -403,6 +414,32 @@ def test_comprar_entradas_forma_pago_tarjeta_valida(servicio_compra, datos_compr
         # Verificar que SÍ se llamó a la pasarela de pagos
         servicio_compra.pasarela_pagos.procesar_pago.assert_called_once()
         servicio_compra.servicio_correo.enviar_confirmacion.assert_called_once()
+
+def test_comprar_entradas_pago_tarjeta_rechazado_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: pago con tarjeta rechazado debe fallar"""
+    with pytest.raises(AttributeError):
+        datos_tarjeta = datos_compra_validos.copy()
+        datos_tarjeta["tipo_pago"] = "Tarjeta"
+        
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=False)  # Pago rechazado
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock()
+        
+        with pytest.raises(Exception, match="Pago rechazado"):
+            servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_tarjeta)
+        
+        # Verificar que NO se envió email de confirmación
+        servicio_compra.servicio_correo.enviar_confirmacion.assert_not_called()
+
+# --- PRUEBAS RED: Casos de Error en Proceso de Pago ---
+
+def test_comprar_entradas_error_envio_email_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: error al enviar email debe fallar"""
+    with pytest.raises(AttributeError):
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=False)  # Email falló
+        
+        with pytest.raises(Exception, match="Error enviando confirmación"):
+            servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_compra_validos)
 
 # --- PRUEBAS RED: Días Festivos ---
 
