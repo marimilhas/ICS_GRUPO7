@@ -23,7 +23,7 @@ def usuario_valido_mock():
 @pytest.fixture
 def datos_compra_validos():
     """Fixture que retorna una base de datos de compra que cumple todas las reglas."""
-    fecha_base = date(2026, 3, 15)
+    fecha_base = datetime(2026, 3, 15, 12, 0, 0)  # Cambiado a datetime con hora
     visitantes_validos = ([ {"edad": 30, "tipo_pase": "Regular"}, {"edad": 10, "tipo_pase": "VIP"}, ] * 2
                           + [{"edad": 5, "tipo_pase": "Regular"}])  # Total 5 visitantes
 
@@ -546,6 +546,40 @@ def test_comprar_entradas_año_nuevo_falla(servicio_compra, datos_compra_validos
     
     datos_de_falla = datos_compra_validos.copy()
     datos_de_falla["fecha_visita"] = año_nuevo.isoformat()
+    
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+# --- PRUEBAS RED: Validación de Horarios en Proceso de Compra ---
+
+def test_comprar_entradas_horario_tarde_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario de tarde (15:30) debe pasar"""
+    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
+        datos_horario_valido = datos_compra_validos.copy()
+        fecha_tarde = datetime(2026, 3, 15, 15, 30, 0)  # 3:30 PM
+        datos_horario_valido["fecha_visita"] = fecha_tarde.isoformat()
+        
+        # Mockear dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
+
+def test_comprar_entradas_horario_noche_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario nocturno (20:00) debe fallar"""
+    datos_de_falla = datos_compra_validos.copy()
+    fecha_noche = datetime(2026, 3, 15, 20, 0, 0)  # 8:00 PM
+    datos_de_falla["fecha_visita"] = fecha_noche.isoformat()
+    
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_horario_madrugada_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario de madrugada (2:00) debe fallar"""
+    datos_de_falla = datos_compra_validos.copy()
+    fecha_madrugada = datetime(2026, 3, 15, 2, 0, 0)  # 2:00 AM
+    datos_de_falla["fecha_visita"] = fecha_madrugada.isoformat()
     
     with pytest.raises(ParqueCerradoError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
