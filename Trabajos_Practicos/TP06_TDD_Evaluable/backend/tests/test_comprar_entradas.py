@@ -1,6 +1,7 @@
 import pytest
 import datetime
 from datetime import timedelta
+from datetime import datetime
 from datetime import date
 from unittest.mock import MagicMock, Mock
 
@@ -371,6 +372,86 @@ def test_calcular_monto_total_mezcla_extrema(servicio_compra):
         ]
         monto_total = servicio_compra._calcular_monto_total(visitantes)
         assert monto_total == 22500  # 0 + 0 + 5000 + 2500 + 10000 + 5000
+
+def test_calcular_monto_total_familia_mixta(servicio_compra):
+    """Prueba RED: familia con diferentes edades y tipos de pase"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 2, "tipo_pase": "VIP"},       # 0 (menor 3)
+            {"edad": 5, "tipo_pase": "VIP"},       # 5000 (menor 10)
+            {"edad": 8, "tipo_pase": "Regular"},   # 2500 (menor 10)
+            {"edad": 35, "tipo_pase": "VIP"},      # 10000 (adulto)
+            {"edad": 40, "tipo_pase": "Regular"},  # 5000 (adulto)
+            {"edad": 65, "tipo_pase": "VIP"},      # 5000 (mayor 60)
+            {"edad": 70, "tipo_pase": "Regular"}   # 2500 (mayor 60)
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 30000  # 0 + 5000 + 2500 + 10000 + 5000 + 5000 + 2500
+
+def test_calcular_monto_total_grupo_jovenes_mixto(servicio_compra):
+    """Prueba RED: grupo de jóvenes con mezcla VIP/Regular"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 20, "tipo_pase": "VIP"},      # 10000
+            {"edad": 22, "tipo_pase": "Regular"},  # 5000
+            {"edad": 25, "tipo_pase": "VIP"},      # 10000
+            {"edad": 18, "tipo_pase": "Regular"}   # 5000
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 30000  # 10000 + 5000 + 10000 + 5000
+
+def test_calcular_monto_total_tercera_edad_mixta(servicio_compra):
+    """Prueba RED: grupo tercera edad con mezcla VIP/Regular"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 65, "tipo_pase": "VIP"},      # 5000
+            {"edad": 68, "tipo_pase": "Regular"},  # 2500
+            {"edad": 72, "tipo_pase": "VIP"},      # 5000
+            {"edad": 75, "tipo_pase": "Regular"}   # 2500
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 15000  # 5000 + 2500 + 5000 + 2500
+
+def test_calcular_monto_total_familia_numerosa_mixta(servicio_compra):
+    """Prueba RED: familia numerosa con múltiples combinaciones"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 1, "tipo_pase": "Regular"},   # 0
+            {"edad": 4, "tipo_pase": "VIP"},       # 5000
+            {"edad": 6, "tipo_pase": "Regular"},   # 2500
+            {"edad": 9, "tipo_pase": "VIP"},       # 5000
+            {"edad": 12, "tipo_pase": "Regular"},  # 5000
+            {"edad": 15, "tipo_pase": "VIP"},      # 10000
+            {"edad": 45, "tipo_pase": "VIP"},      # 10000
+            {"edad": 50, "tipo_pase": "Regular"},  # 5000
+            {"edad": 67, "tipo_pase": "VIP"},      # 5000
+            {"edad": 70, "tipo_pase": "Regular"}   # 2500
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 50000  # Suma de todos
+
+def test_calcular_monto_total_solo_vip(servicio_compra):
+    """Prueba RED: grupo donde todos eligen VIP"""
+    with pytest.raises(AttributeError):
+        visitantes = [
+            {"edad": 5, "tipo_pase": "VIP"},       # 5000
+            {"edad": 30, "tipo_pase": "VIP"},      # 10000
+            {"edad": 65, "tipo_pase": "VIP"}       # 5000
+        ]
+        monto_total = servicio_compra._calcular_monto_total(visitantes)
+        assert monto_total == 20000  # 5000 + 10000 + 5000
+
+# --- PRUEBAS RED: Proceso de Compra Completo ---
+
+def test_comprar_entradas_proceso_completo_exitoso(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: proceso completo de compra exitoso"""
+    with pytest.raises(AttributeError):
+        # Mockear todas las dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_compra_validos)
 
 # --- PRUEBAS RED: Validación de Forma de Pago ---
 
