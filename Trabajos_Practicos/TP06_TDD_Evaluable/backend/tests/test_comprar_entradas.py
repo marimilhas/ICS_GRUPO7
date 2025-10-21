@@ -319,7 +319,6 @@ def test_calcular_monto_total_varios_menores(servicio_compra):
             {"edad": 2, "tipo_pase": "Regular"},   # 0
             {"edad": 5, "tipo_pase": "Regular"},   # 2500
             {"edad": 7, "tipo_pase": "VIP"},       # 5000
-            {"edad": 70, "tipo_pase": "Regular"}   # 2500
         ]
         monto_total = servicio_compra._calcular_monto_total(visitantes)
         assert monto_total == 10000
