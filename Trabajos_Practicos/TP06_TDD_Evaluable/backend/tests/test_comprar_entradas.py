@@ -616,6 +616,43 @@ def test_comprar_entradas_horario_madrugada_falla(servicio_compra, datos_compra_
     with pytest.raises(ParqueCerradoError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
 
+def test_comprar_entradas_horario_exacto_antes_cierre_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario exacto antes de cierre (18:59:59) debe pasar"""
+    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
+        datos_horario_valido = datos_compra_validos.copy()
+        fecha_antes_cierre = datetime(2026, 3, 15, 18, 59, 59)  # Justo antes del cierre
+        datos_horario_valido["fecha_visita"] = fecha_antes_cierre.isoformat()
+        
+        # Mockear dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
+
+def test_comprar_entradas_horario_exacto_cierre_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario exacto de cierre (19:00) debe fallar"""
+    datos_de_falla = datos_compra_validos.copy()
+    fecha_cierre = datetime(2026, 3, 15, 19, 0, 0)  # 7:00 PM exacto
+    datos_de_falla["fecha_visita"] = fecha_cierre.isoformat()
+    
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_horario_medio_dia_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario de medio día (12:00) debe pasar"""
+    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
+        datos_horario_valido = datos_compra_validos.copy()
+        fecha_medio_dia = datetime(2026, 3, 15, 12, 0, 0)  # 12:00 PM
+        datos_horario_valido["fecha_visita"] = fecha_medio_dia.isoformat()
+        
+        # Mockear dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
+
 # --- PRUEBAS RED: Usuario No Registrado ---
 
 def test_comprar_entradas_usuario_no_registrado_falla(servicio_compra, datos_compra_validos):
