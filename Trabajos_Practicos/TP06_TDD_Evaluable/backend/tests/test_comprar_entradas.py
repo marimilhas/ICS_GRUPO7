@@ -552,6 +552,38 @@ def test_comprar_entradas_año_nuevo_falla(servicio_compra, datos_compra_validos
 
 # --- PRUEBAS RED: Validación de Horarios en Proceso de Compra ---
 
+def test_comprar_entradas_horario_antes_de_abrir_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario antes de las 9:00 debe fallar"""
+    datos_de_falla = datos_compra_validos.copy()
+    fecha_antes_apertura = datetime(2026, 3, 15, 8, 30, 0)  # 8:30 AM
+    datos_de_falla["fecha_visita"] = fecha_antes_apertura.isoformat()
+    
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_horario_despues_de_cerrar_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario después de las 19:00 debe fallar"""
+    datos_de_falla = datos_compra_validos.copy()
+    fecha_despues_cierre = datetime(2026, 3, 15, 19, 30, 0)  # 7:30 PM
+    datos_de_falla["fecha_visita"] = fecha_despues_cierre.isoformat()
+    
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+
+def test_comprar_entradas_horario_exacto_apertura_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: comprar con horario exacto de apertura (9:00) debe pasar"""
+    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
+        datos_horario_valido = datos_compra_validos.copy()
+        fecha_apertura = datetime(2026, 3, 15, 9, 0, 0)  # 9:00 AM exacto
+        datos_horario_valido["fecha_visita"] = fecha_apertura.isoformat()
+        
+        # Mockear dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
+
 def test_comprar_entradas_horario_tarde_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
     """Prueba RED: comprar con horario de tarde (15:30) debe pasar"""
     with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
