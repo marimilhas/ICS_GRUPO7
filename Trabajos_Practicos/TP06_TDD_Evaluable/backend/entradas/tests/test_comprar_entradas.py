@@ -22,7 +22,7 @@ def usuario_valido_mock():
 
 @pytest.fixture
 def usuario_no_valido_mock():
-    """Retorna un mock que simula un objeto Usuario ya cargado y válido."""
+    """Retorna un mock que simula un objeto Usuario no registrado."""
     return Mock(nombre="Martina González", email="matina@example.com", esta_registrado=False)
 
 @pytest.fixture
@@ -48,6 +48,8 @@ def mocks_infraestructura():
         'servicio_calendario': MagicMock()
     }
     mocks['servicio_calendario'].es_dia_abierto.return_value = True
+    mocks['pasarela_pagos'].procesar_pago.return_value = True
+
     return mocks
 
 @pytest.fixture

@@ -127,14 +127,45 @@ class ServicioCompraEntradas:
         raise NotImplementedError("Método pendiente de implementación")
 
     def _validar_usuario(self, usuario: User):
-        """Valida que el usuario esté registrado."""
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
-
-    # 4. Métodos de Proceso (Deben fallar con NotImplementedError)
+        """
+        Valida que el usuario esté registrado.
+        """
+        if not getattr(usuario, "esta_registrado", False):
+            raise PermissionError("Usuario no registrado")
+        
+        return True
 
     def _gestionar_pago(self, monto_total: float, tipo_pago: str) -> bool:
-        """Procesa el pago."""
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        """
+        Procesa el pago (llama a pasarela si es Tarjeta) o lo registra (si es Efectivo).
+        """
+
+         # Validar que se haya especificado una forma de pago
+        if tipo_pago is None:
+            raise ValueError("Forma de pago inválida: No especificada")
+
+        # Normalizamos el texto para evitar errores por mayúsculas/minúsculas
+        tipo_pago = tipo_pago.strip().capitalize()
+
+        # Manejar los distintos tipos de pago
+        if tipo_pago == "Efectivo":
+            # No se llama a la pasarela de pagos
+            return True
+
+        elif tipo_pago == "Tarjeta":
+            # Llama a la pasarela de pagos
+            resultado = self.pasarela_pagos.procesar_pago(monto=monto_total)
+
+            if resultado:
+                return True
+            else:
+                # Si la pasarela devuelve False, lanzar la excepción correspondiente
+                raise PagoRechazadoError("El pago fue rechazado")
+
+        else:
+            # Cualquier otro tipo de pago no reconocido
+            raise ValueError(f"Forma de pago inválida: '{tipo_pago}' no reconocido")
+
 
     def _enviar_confirmacion(self, usuario: User, compra):
         """Envía el correo de confirmación de la compra."""
