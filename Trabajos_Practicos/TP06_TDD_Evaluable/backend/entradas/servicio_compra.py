@@ -1,7 +1,7 @@
 # servicio_compra.py
 
 from django.contrib.auth.models import User
-from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError
+from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError, FechaInvalidaError
 from datetime import datetime, timedelta
 
 from .repositories import PaseRepository
@@ -42,14 +42,40 @@ class ServicioCompraEntradas:
     # 3. Métodos de Validación (Deben fallar con NotImplementedError)
 
     def _validar_cantidad(self, cantidad, visitantes):
-        """Valida límites y consistencia de cantidad."""
-        # Se elimina la implementación parcial que haría pasar algunos tests:
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        """
+        Valida que no se compren más de 10 entradas, que sea una cantidad positiva y que la cantidad coincida con los visitantes
+        """
 
+        #Validamos el rango valido
+        if cantidad <= 0:
+            raise ValueError("La cantidad de entradas debe ser al menos 1.")
+        
+        if cantidad > 10:
+            raise LimiteEntradasExcedidoError("La cantidad de entradas no puede ser mayor a 10.")
+        
+        #Validamos que coincida con la cantidad de visitantes real         
+        if cantidad != len(visitantes):
+            raise ValueError("La cantidad de entradas debe ser igual al nro de visitantes.")
+        
+        
+        
     def _validar_fecha_hora_visita(self, fecha):
-        """Valida día hábil, feriados y horario de apertura."""
-        # Se elimina la implementación parcial que haría pasar algunos tests:
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        """
+        Valida que la fecha sea en un dia donde el parque esté abierto (ni lunes, ni feriados como navidad o año nuevo),
+        que se compre durante horario habilitado
+        """
+
+        #Creamos las fechas y horas necesarias para comparacion
+        dia_fecha = fecha.weekday()
+        navidad = datetime(fecha.year, month=12, day=25) + timedelta(hours=fecha.hour, minutes=fecha.minute, seconds=fecha.second)
+        anio_nuevo = datetime(fecha.year, month=1, day=1) + timedelta(hours=fecha.hour, minutes=fecha.minute, seconds=fecha.second)
+        hora_fecha = fecha.hour
+
+        if fecha == navidad or fecha == anio_nuevo or dia_fecha == 0 or hora_fecha < 9 or hora_fecha >= 19:
+            raise ParqueCerradoError
+
+        if fecha < datetime.now():
+            raise FechaInvalidaError
 
     def _validar_valores_pases(self, visitantes: list):
         """
