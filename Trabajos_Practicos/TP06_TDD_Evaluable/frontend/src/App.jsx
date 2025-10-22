@@ -5,6 +5,7 @@ import ResumenCompra from "./components/ResumenCompra";
 import Confirmacion from "./components/Confirmacion";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import "./App.css";
 
 function App() {
   const [compra, setCompra] = useState(null);
@@ -40,64 +41,64 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-emerald-100 text-gray-800">
+    <div className="min-h-screen flex flex-col app-background">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Indicador de Pasos - SIN CAMBIOS */}
+        {/* Indicador de Pasos */}
         <div className="max-w-4xl mx-auto mb-8">
           <div className="flex items-center justify-center">
             {/* Paso 1: Formulario */}
             <div className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
                 pasoActual === "formulario" 
-                  ? "bg-green-600 border-green-700 text-white" 
+                  ? "bg-color-medium-green border-color-dark-green text-white" 
                   : pasoActual === "resumen" || pasoActual === "confirmacion"
-                  ? "bg-green-500 border-green-600 text-white"
-                  : "bg-white border-green-400 text-green-600"
+                  ? "bg-color-light-green border-color-medium-green text-white"
+                  : "bg-white border-color-light-green text-color-medium-green"
               }`}>
                 1
               </div>
               <span className={`ml-2 font-medium ${
-                pasoActual === "formulario" ? "text-green-700" : "text-green-600"
+                pasoActual === "formulario" ? "text-color-dark-green" : "text-color-medium-green"
               }`}>
                 Compra
               </span>
             </div>
 
-            <div className="w-16 h-1 bg-green-300 mx-2"></div>
+            <div className="w-16 h-1 bg-color-lime-green mx-2"></div>
 
             {/* Paso 2: Resumen */}
             <div className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
                 pasoActual === "resumen" 
-                  ? "bg-green-600 border-green-700 text-white" 
+                  ? "bg-color-medium-green border-color-dark-green text-white" 
                   : pasoActual === "confirmacion"
-                  ? "bg-green-500 border-green-600 text-white"
-                  : "bg-white border-green-300 text-gray-400"
+                  ? "bg-color-light-green border-color-medium-green text-white"
+                  : "bg-white border-color-lime-green text-gray-400"
               }`}>
                 2
               </div>
               <span className={`ml-2 font-medium ${
-                pasoActual === "resumen" ? "text-green-700" : "text-gray-500"
+                pasoActual === "resumen" ? "text-color-dark-green" : "text-gray-500"
               }`}>
                 Resumen
               </span>
             </div>
 
-            <div className="w-16 h-1 bg-green-300 mx-2"></div>
+            <div className="w-16 h-1 bg-color-lime-green mx-2"></div>
 
             {/* Paso 3: Confirmación */}
             <div className="flex items-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
                 pasoActual === "confirmacion" 
-                  ? "bg-green-600 border-green-700 text-white" 
-                  : "bg-white border-green-300 text-gray-400"
+                  ? "bg-color-medium-green border-color-dark-green text-white" 
+                  : "bg-white border-color-lime-green text-gray-400"
               }`}>
                 3
               </div>
               <span className={`ml-2 font-medium ${
-                pasoActual === "confirmacion" ? "text-green-700" : "text-gray-500"
+                pasoActual === "confirmacion" ? "text-color-dark-green" : "text-gray-500"
               }`}>
                 Confirmación
               </span>
@@ -105,11 +106,11 @@ function App() {
           </div>
         </div>
 
-        <h1 className="text-4xl font-extrabold text-center text-green-800 mb-12">
+        <h1 className="text-4xl font-extrabold text-center text-color-dark-green mb-12">
           EcoHarmony Park - Entradas
         </h1>
 
-        {/* Contenido Dinámico - SIN CAMBIOS */}
+        {/* Contenido Dinámico */}
         {pasoActual === "formulario" && (
           <FormularioCompra onCompra={manejarCompraExitosa} />
         )}
@@ -126,7 +127,7 @@ function App() {
               </button>
               <button
                 onClick={manejarConfirmacion}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition-all"
+                className="bg-color-medium-green hover:bg-color-dark-green text-white font-semibold py-3 px-6 rounded-lg shadow transition-all"
               >
                 Confirmar Compra →
               </button>
@@ -140,7 +141,7 @@ function App() {
             <div className="text-center mt-6">
               <button
                 onClick={manejarNuevaCompra}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow transition-all"
+                className="bg-color-medium-green hover:bg-color-dark-green text-white font-semibold py-3 px-8 rounded-lg shadow transition-all"
               >
                 Realizar Nueva Compra
               </button>
