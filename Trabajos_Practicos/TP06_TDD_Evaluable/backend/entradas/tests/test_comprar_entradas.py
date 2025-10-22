@@ -12,6 +12,8 @@ from unittest.mock import MagicMock, Mock
 from ..excepciones import *
 from ..models import Compra
 from ..servicio_compra import ServicioCompraEntradas
+from ..repositories import PaseRepository # Necesitas esta importación
+from ..models import Pase
 
 # --- FIXTURES ---
 
@@ -52,9 +54,24 @@ def mocks_infraestructura():
     return mocks
 
 @pytest.fixture
-def servicio_compra(mocks_infraestructura):
+def servicio_compra(mocks_infraestructura, pases_iniciales):
     """Fixture que inicializa y retorna una nueva instancia de ServicioCompraEntradas."""
-    return ServicioCompraEntradas(**mocks_infraestructura)
+
+    # Inyectamos el Repositorio de pases REAL
+    pase_repo_real = PaseRepository()
+
+    return ServicioCompraEntradas(**mocks_infraestructura, pase_repository=pase_repo_real)
+
+
+@pytest.fixture
+def pases_iniciales(db):
+    """Crea los tipos de pase en la DB de prueba."""
+
+    Pase.objects.create(tipo="Regular", precio=5000.00)
+    Pase.objects.create(tipo="VIP", precio=10000.00)
+
+    # Retornamos los pases válidos para usarlos como referencia
+    return ["Regular", "VIP"]
 
 # ====================================================================
 # PRUEBAS DE INTEGRACIÓN

@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError
 from datetime import datetime, timedelta
 
+from .repositories import PaseRepository
+
 
 # Asegúrate de que las excepciones necesarias están definidas en excepciones.py
 # from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError
@@ -11,10 +13,11 @@ from datetime import datetime, timedelta
 class ServicioCompraEntradas:
     """Clase de la Capa de Lógica de Negocio (Service)."""
 
-    def __init__(self, pasarela_pagos, servicio_correo, servicio_calendario):
+    def __init__(self, pasarela_pagos, servicio_correo, servicio_calendario, pase_repository: PaseRepository):
         self.pasarela_pagos = pasarela_pagos
         self.servicio_correo = servicio_correo
         self.servicio_calendario = servicio_calendario
+        self.pase_repository = pase_repository  # <-- Nueva dependencia inyectada
 
     # 1. Método Principal (Debe fallar para los tests de integración)
     def comprar_entradas(self, usuario: User, cantidad: int, fecha_visita: str, tipo_pago: str, visitantes: list):
@@ -53,7 +56,24 @@ class ServicioCompraEntradas:
         Valida que los 'tipo_pase' existan (ej. 'Regular', 'VIP').
         Será implementado en fase GREEN.
         """
-        raise NotImplementedError("Método pendiente de implementación")
+        # 1. Obtener los tipos de pase válidos de la Capa de Datos (Repository)
+        tipos_validos = self.pase_repository.obtener_tipos_de_pase_validos()
+
+        if not tipos_validos:
+            # Caso de borde si la DB está vacía
+            raise ValueError("Error de configuración: No hay tipos de pases disponibles.")
+
+        # 2. Iterar y validar contra la lista válida
+        for i, visitante in enumerate(visitantes):
+            tipo_pase = visitante.get("tipo_pase")
+
+            # Asumimos que el formato (string no vacío) fue validado previamente
+
+            if tipo_pase not in tipos_validos:
+                # Usamos ValueError como el test requiere
+                raise ValueError(f"Tipo de pase desconocido: '{tipo_pase}'.")
+
+        return True
 
     def _validar_formato_fecha(self, fecha_str: str) -> datetime:
         """
