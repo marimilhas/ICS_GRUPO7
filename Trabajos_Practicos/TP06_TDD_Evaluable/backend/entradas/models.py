@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 
 class Pase(models.Model):
-    nombre = models.CharField(max_length=50, unique=True, help_text="Nombre del tipo de pase")
+    tipo = models.CharField(max_length=50, unique=True, help_text="Tipo de pase")
     precio = models.DecimalField(
         max_digits=8,
         decimal_places=2,
@@ -11,7 +11,7 @@ class Pase(models.Model):
     )
 
     def __str__(self):
-        return f"{self.nombre} (${self.precio_base_adulto})"
+        return f"{self.tipo} (${self.precio_base_adulto})"
 
 class Compra(models.Model):
     class FormasPago(models.TextChoices):
@@ -49,4 +49,4 @@ class Entrada(models.Model):
     precio_calculado = models.DecimalField(max_digits=8, decimal_places=2, help_text="Precio final de esta entrada")
 
     def __str__(self):
-        return f"Entrada para Compra #{self.compra.id} - Pase: {self.pase.nombre} - Edad: {self.edad_visitante}"
+        return f"Entrada para Compra #{self.compra.id} - Pase: {self.pase.tipo} - Edad: {self.edad_visitante}"

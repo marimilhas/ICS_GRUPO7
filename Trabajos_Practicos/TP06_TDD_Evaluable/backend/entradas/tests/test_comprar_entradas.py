@@ -48,6 +48,7 @@ def mocks_infraestructura():
         'servicio_calendario': MagicMock()
     }
     mocks['servicio_calendario'].es_dia_abierto.return_value = True
+    mocks['pasarela_pagos'].procesar_pago.return_value = True
     return mocks
 
 @pytest.fixture
@@ -450,7 +451,7 @@ def test_validar_formato_pases_vacio_falla(servicio_compra):
     with pytest.raises(ValueError, match="El 'tipo_pase' no puede estar vacío"):
         servicio_compra._validar_formato_pases(visitantes_invalidos)
 
-def test_validar_formato_pases_falla_con_tipo_incorrecto(servicio_compra):
+def test_validar_formato_pases_falla_con_tipo_incorrecto_falla(servicio_compra):
     """ Falla si 'tipo_pase' no es un string (ej. un número)."""
     visitantes_invalidos = [
         {"edad": 30, "tipo_pase": 123},

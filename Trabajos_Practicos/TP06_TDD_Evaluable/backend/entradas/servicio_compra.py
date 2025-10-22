@@ -117,7 +117,25 @@ class ServicioCompraEntradas:
 
     def _validar_formato_pases(self, visitantes: list):
         """Valida que la clave 'tipo_pase' exista, sea un string y no esté vacío/None/tipo incorrecto."""
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        for i, visitante in enumerate(visitantes):
+            # 1. Validar existencia de la clave 'tipo_pase'
+            if "tipo_pase" not in visitante:
+                raise ValueError(f"Falta la clave 'tipo_pase' para el visitante (índice {i}).")
+
+            tipo_pase = visitante["tipo_pase"]
+
+            # 2. Validar tipo (debe ser un string, cubriendo casos None y otros tipos incorrectos)
+            if not isinstance(tipo_pase, str):
+                # Esto cubre fallos para None, int, float, etc.
+                raise ValueError("El 'tipo_pase' debe ser texto.")
+
+            # 3. Validar string vacío
+            if not tipo_pase.strip():
+                # .strip() maneja tanto "" como " " (solo espacios en blanco)
+                raise ValueError("El 'tipo_pase' no puede estar vacío.")
+
+            # Si el bucle termina sin errores, los formatos son válidos.
+        return True
 
     def _validar_formato_usuario(self, usuario):
         """
