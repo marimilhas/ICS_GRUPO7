@@ -1,3 +1,4 @@
+// hooks/useCompraEntradas.js
 import { useState } from 'react';
 import { servicioCompra } from '../services/entradasService';
 
@@ -10,9 +11,10 @@ export const useCompraEntradas = () => {
     setError(null);
     
     try {
-      const compraProcesada = await servicioCompra.procesarCompra(datosCompra);
+      console.log('🚀 Iniciando procesamiento de compra...');
+      const resultado = await servicioCompra.procesarCompra(datosCompra);
       
-      // Mensaje de confirmación para el email - ACTUALIZADO
+      // Mensaje de confirmación para el email - MANTENIDO
       const mensajeMail = `
         ¡Gracias por tu compra en EcoHarmony Park!
         
@@ -35,13 +37,15 @@ export const useCompraEntradas = () => {
         ¡Te esperamos!
       `;
 
+      console.log('✅ Compra procesada exitosamente');
       return { 
-        compra: compraProcesada, 
+        compra: resultado, 
         mensajeMail,
-        datosOriginales: datosCompra // Para mantener compatibilidad
+        datosOriginales: datosCompra
       };
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.response?.data || 'Error al procesar la compra';
+      console.error('❌ Error en procesarCompra:', err);
+      const errorMessage = err.message || 'Error al procesar la compra';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -49,9 +53,12 @@ export const useCompraEntradas = () => {
     }
   };
 
+  const clearError = () => setError(null);
+
   return {
     procesarCompra,
     loading,
-    error
+    error,
+    clearError
   };
 };

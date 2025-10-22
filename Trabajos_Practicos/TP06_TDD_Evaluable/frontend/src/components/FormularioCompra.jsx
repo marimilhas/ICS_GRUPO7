@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from "react";
-// Importaciones del Backend: Servicio para obtener pases y hook para la lógica de compra
-import { entradasService } from "../../services/entradasService.js";
-import { useCompraEntradas } from '../../hooks/useCompraEntradas.js';
+import { entradasService } from "../services/entradasService.js";
+import { useCompraEntradas } from '../hooks/useCompraEntradas.js';
 import "../css/form.css";
 
 const FormularioCompra = ({ onCompra }) => {
-  const [fecha, setFecha] = useState("");
-  const [cantidad, setCantidad] = useState(1);
-  const [entradas, setEntradas] = useState([{ edad: 18, pase: "regular" }]);
-  const [formaPago, setFormaPago] = useState("");
-  const [mail, setMail] = useState("");
-  const [errores, setErrores] = useState({});
-  const [camposModificados, setCamposModificados] = useState({});
-  const [formularioValido, setFormularioValido] = useState(false);
+  const [fecha, setFecha] = useState("");
+  const [cantidad, setCantidad] = useState(1);
+  const [entradas, setEntradas] = useState([{ edad: 18, pase: "regular" }]);
+  const [formaPago, setFormaPago] = useState("");
+  const [mail, setMail] = useState("");
+  const [errores, setErrores] = useState({});
+  const [camposModificados, setCamposModificados] = useState({});
+  const [formularioValido, setFormularioValido] = useState(false);
   
   // Estado para guardar los datos de los pases disponibles (traídos del backend)
   const [pasesDisponibles, setPasesDisponibles] = useState([]);
+  const [errorCargaPases, setErrorCargaPases] = useState(null);
   
   // Hook para la lógica asíncrona de envío de compra
-  const { procesarCompra, loading, error, setError } = useCompraEntradas(); // asumo setError viene del hook
-
-  const diasCerrados = [1]; // 1: Lunes
+  const { procesarCompra, loading, error } = useCompraEntradas();
+  
+  const diasCerrados = [1]; // 1: Lunes
   const diasFestivos = [
     { dia: 25, mes: 12 }, // 25 de diciembre
     { dia: 1, mes: 1 }    // 1 de enero
@@ -30,24 +30,22 @@ const FormularioCompra = ({ onCompra }) => {
   // 🚀 LÓGICA DE CONEXIÓN AL BACKEND (1: Carga de precios)
   // ==========================================================
   
-  useEffect(() => {
-    const cargarPases = async () => {
+  useEffect(() => {
+    const cargarPases = async () => {
       console.log("1. Formulario: Intentando cargar pases desde el backend...");
-      try {
-        const response = await entradasService.getPases(); // Llama al API para obtener pases/precios
+      try {
+        const response = await entradasService.getPases();
         console.log("2. Formulario: Pases cargados con éxito:", response.data);
-        setPasesDisponibles(response.data);
-        // Limpiar error si la carga es exitosa
-        if (error) setError(null);
-      } catch (err) {
-        console.error('Error cargando pases:', err);
-        // Si falla, notificar al usuario, pero la app sigue usando precios fijos (ver obtenerCategoriaEdad)
-        setError("Error al cargar los tipos de pase disponibles. Se usarán precios predeterminados."); 
+        setPasesDisponibles(response.data);
+        setErrorCargaPases(null); // Limpiar error si carga exitosa
+      } catch (err) {
+        console.error('Error cargando pases:', err);
+        setErrorCargaPases("Error al cargar los tipos de pase disponibles. Se usarán precios predeterminados.");
         console.warn("3. Formulario: ¡ERROR! No se pudieron cargar los pases. Se usan precios fijos.");
-      }
-    };
-    cargarPases();
-  }, [setError, error]); // Dependencia del error para limpiar el estado al cargar exitosamente
+      }
+    };
+    cargarPases();
+  }, []);
 
   // Validar TODO el formulario en cada cambio
   useEffect(() => {
@@ -276,59 +274,61 @@ const FormularioCompra = ({ onCompra }) => {
   // ==========================================================
   // 🚀 LÓGICA DE CONEXIÓN AL BACKEND (2: Envío de Compra)
   // ==========================================================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validarFormularioCompleto()) {
-      setCamposModificados({
-        fecha: true,
-        cantidad: true,
-        edades: true,
-        formaPago: true,
-        mail: true
-      });
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validarFormularioCompleto()) {
+    setCamposModificados({
+      fecha: true,
+      cantidad: true,
+      edades: true,
+      formaPago: true,
+      mail: true
+    });
+    return;
+  }
 
-    try {
-      // Preparar datos para enviar al backend
-      const compraData = {
-        fecha_visita: fecha,
-        cantidad_entradas: cantidad,
-        entradas: entradas.map(entrada => ({
-          edad: entrada.edad,
-          tipo_pase: entrada.pase,
-          precio: obtenerCategoriaEdad(entrada.edad, entrada.pase).precioNumerico
-        })),
-        forma_pago: formaPago,
-        email: mail,
-        total: calcularTotalNumerico()
-      };
-      console.log("4. Formulario: Enviando datos de reserva al hook/backend...", compraData);
-      // Usar el hook para procesar la compra (Llama al backend)
-      const resultado = await procesarCompra(compraData);
-      console.log("5. Formulario: Reserva creada exitosamente. ID devuelto:", resultado.compra.id);
-      
-      // Si la compra fue exitosa
-      if (onCompra) {
-        const compraConfirmada = {
-          ...compraData,
-          id: resultado.compra.id,
-          fecha: fecha,
-          cantidad: cantidad,
-          formaPago: formaPago,
-          mail: mail,
-          total: calcularTotal(),
-          entradas: entradas
-        };
-        
-        onCompra(compraConfirmada, resultado.mensajeMail);
-      }
-    } catch (err) {
-      // El error se maneja en el hook y se propaga a la UI (estado 'error')
-      console.error('Error en el formulario al enviar:', err);
-    }
-  };
+  try {
+    // Preparar datos para enviar al backend
+    const compraData = {
+      fecha_visita: fecha,
+      cantidad_entradas: cantidad,
+      entradas: entradas.map(entrada => ({
+        edad: entrada.edad,
+        tipo_pase: entrada.pase, // usar 'pase' en lugar de 'tipo_pase'
+        precio: obtenerCategoriaEdad(entrada.edad, entrada.pase).precioNumerico
+      })),
+      forma_pago: formaPago, // 'tarjeta' o 'efectivo' - se transformará a 'TAR'/'EFE' en el servicio
+      email: mail,
+      total: calcularTotalNumerico(),
+      nombre: "Cliente" // Agregar nombre requerido por el backend
+    };
+    
+    console.log("4. Formulario: Enviando datos de reserva al hook/backend...", compraData);
+    
+    // Usar el hook para procesar la compra
+    const resultado = await procesarCompra(compraData);
+    console.log("5. Formulario: Reserva creada exitosamente. ID devuelto:", resultado.compra.id);
+    
+    // Si la compra fue exitosa
+    if (onCompra) {
+      const compraConfirmada = {
+        ...compraData,
+        id: resultado.compra.id,
+        fecha: fecha,
+        cantidad: cantidad,
+        formaPago: formaPago,
+        mail: mail,
+        total: calcularTotal(),
+        entradas: entradas
+      };
+      
+      onCompra(compraConfirmada, resultado.mensajeMail);
+    }
+  } catch (err) {
+    console.error('Error en el formulario al enviar:', err);
+  }
+};
 
   // Para mostrar el mini resumen de compra antes de continuar
   const entradasAgrupadas = entradas.reduce((acc, entrada) => {
@@ -356,6 +356,13 @@ const FormularioCompra = ({ onCompra }) => {
       <h2 className="text-3xl font-bold text-green-dark mb-8 text-center">
         Comprar Entradas
       </h2>
+
+      {/* Mostrar error de carga de pases */}
+      {errorCargaPases && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-700 font-medium">{errorCargaPases}</p>
+            </div>
+      )}
 
       {/* Mostrar error del backend */}
       {error && (

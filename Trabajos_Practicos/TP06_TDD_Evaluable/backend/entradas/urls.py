@@ -2,5 +2,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # De momento vacío, lo llenaremos con las vistas de la User Story
+    path('compras/', views.CompraCreateView.as_view(), name='comprar_entradas'),
+    path('pases/', views.PaseListView.as_view(), name='lista_pases'),  # Para cargar pases
 ]
