@@ -56,9 +56,27 @@ class ServicioCompraEntradas:
         raise NotImplementedError("Método pendiente de implementación")
 
     def _validar_formato_fecha(self, fecha_str: str) -> datetime:
-        """Valida que la fecha sea un string con formato ISO 8601."""
-        # Se elimina la implementación completa que haría pasar todos los tests de formato de fecha:
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        """
+        Valida que la fecha sea un string no vacío y que tenga formato ISO 8601 (YYYY-MM-DDThh:mm:ss).
+        Retorna el objeto datetime si es válido.
+        """
+        # 1. Validación de ausencia (None o string vacío)
+        if fecha_str is None or fecha_str == "":
+            raise ValueError("La fecha de visita no fue proporcionada.")
+
+        # 2. Validación de tipo (Debe ser un string)
+        # Esto cubre el caso donde 12345 (int) se pasa como argumento.
+        if not isinstance(fecha_str, str):
+            raise ValueError("La fecha de visita debe ser un texto.")
+
+        # 3. Validación de formato (ISO 8601)
+        try:
+            # El formato esperado es YYYY-MM-DDThh:mm:ss
+            fecha_dt = datetime.fromisoformat(fecha_str)
+            return fecha_dt
+        except ValueError:
+            # Atrapa cualquier error de parseo que no cumpla con el formato ISO
+            raise ValueError("El formato de la fecha es inválido.")
 
     def _validar_formato_cantidad(self, cantidad):
         """Valida que la cantidad sea un entero."""
