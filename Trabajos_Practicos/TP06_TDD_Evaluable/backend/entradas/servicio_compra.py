@@ -80,11 +80,40 @@ class ServicioCompraEntradas:
 
     def _validar_formato_cantidad(self, cantidad):
         """Valida que la cantidad sea un entero."""
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+        # La validación explícita de tipo 'int' asegura que los float (5.0) y otros tipos fallen.
+        if not isinstance(cantidad, int):
+            raise ValueError("La cantidad de entradas debe ser un número entero.")
+
+        # Si es un entero, simplemente retorna (o no hace nada, lo que permite que el 'try' del test pase)
+        return True
 
     def _validar_formato_edades(self, visitantes: list):
         """Valida que la clave 'edad' exista, sea un entero y no sea negativa/muy alta."""
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        max_edad_razonable = 120  # Límite superior para la edad
+
+        for i, visitante in enumerate(visitantes):
+            # 1. Validar existencia de la clave 'edad'
+            if "edad" not in visitante:
+                raise EdadInvalidaError(f"Falta 'edad' para un visitante (índice {i}).")
+
+            edad = visitante["edad"]
+
+            # 2. Validar tipo (debe ser un entero, excluye None, string, float, etc.)
+            if not isinstance(edad, int):
+                # Esto cubre fallos para string, float (30.5), y None
+                raise EdadInvalidaError("La edad debe ser un número entero.")
+
+            # 3. Validar edad negativa
+            if edad < 0:
+                raise EdadInvalidaError("La edad no puede ser negativa.")
+
+            # 4. Validar edad irrealmente alta
+            if edad > max_edad_razonable:
+                raise EdadInvalidaError("La edad proporcionada parece irreal.")
+
+        # Si el bucle termina sin errores, las edades son válidas.
+        return True
 
     def _validar_formato_pases(self, visitantes: list):
         """Valida que la clave 'tipo_pase' exista, sea un string y no esté vacío/None/tipo incorrecto."""
