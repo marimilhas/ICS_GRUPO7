@@ -186,9 +186,34 @@ class ServicioCompraEntradas:
     def _validar_formato_usuario(self, usuario):
         """
         Valida que el objeto usuario tenga la estructura esperada.
-        Será implementado en fase GREEN.
         """
-        raise NotImplementedError("Método pendiente de implementación")
+
+        # Caso 1: Usuario no proporcionado
+        if usuario is None:
+            raise ValueError("No se proporcionó información del usuario")
+
+        # Lista de atributos obligatorios
+        atributos_requeridos = ["nombre", "email", "esta_registrado"]
+
+        # Caso 2: Falta algún atributo requerido
+        for atributo in atributos_requeridos:
+            if not hasattr(usuario, atributo):
+                raise ValueError(f"Falta el atributo '{atributo}'")
+
+        # Caso 3: Validar contenido de nombre
+        if not isinstance(usuario.nombre, str) or usuario.nombre.strip() == "":
+            raise ValueError("El atributo 'nombre' no puede estar vacío")
+
+        # Caso 4: Validar contenido de email
+        if not isinstance(usuario.email, str) or usuario.email.strip() == "":
+            raise ValueError("El atributo 'email' no puede estar vacío")
+
+        # Caso 5: Validar tipo de 'esta_registrado'
+        if not isinstance(usuario.esta_registrado, bool):
+            raise ValueError("El atributo 'esta_registrado' debe ser de tipo bool")
+
+        # Si todo es correcto, no hace falta retornar nada (la validación pasa)
+        return True
 
     def _validar_usuario(self, usuario: User):
         """
