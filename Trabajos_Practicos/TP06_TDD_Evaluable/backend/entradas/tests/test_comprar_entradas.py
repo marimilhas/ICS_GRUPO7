@@ -74,6 +74,88 @@ def pases_iniciales(db):
     # Retornamos los pases válidos para usarlos como referencia
     return ["Regular", "VIP"]
 
+
+
+# --- FIXTURES DE FECHAS DINÁMICAS ---
+
+@pytest.fixture
+def fecha_habil():
+    """Genera una fecha válida: día abierto (no lunes, 25/12, 1/1) y dentro del horario 09–19."""
+    fecha = datetime.now() + timedelta(days=1)
+    while (
+        fecha.weekday() == 0
+        or (fecha.day == 25 and fecha.month == 12)
+        or (fecha.day == 1 and fecha.month == 1)
+    ):
+        fecha += timedelta(days=1)
+    return fecha.replace(hour=12, minute=0, second=0, microsecond=0)
+
+
+@pytest.fixture
+def fecha_no_habil():
+    """Genera una fecha en lunes (día cerrado)."""
+    fecha = datetime.now()
+    while fecha.weekday() != 0:
+        fecha += timedelta(days=1)
+    return fecha.replace(hour=12, minute=0, second=0, microsecond=0)
+
+
+@pytest.fixture
+def fecha_fuera_de_horario():
+    """Genera una fecha abierta pero antes del horario de apertura."""
+    fecha = datetime.now() + timedelta(days=1)
+    while (
+        fecha.weekday() == 0
+        or (fecha.day == 25 and fecha.month == 12)
+        or (fecha.day == 1 and fecha.month == 1)
+    ):
+        fecha += timedelta(days=1)
+    return fecha.replace(hour=8, minute=59, second=59, microsecond=0)
+
+
+@pytest.fixture
+def fecha_al_abrir(fecha_habil):
+    """Genera una fecha válida justo a las 9:00."""
+    return fecha_habil.replace(hour=9, minute=0, second=0)
+
+
+@pytest.fixture
+def fecha_durante_dia(fecha_habil):
+    """Genera una fecha válida a mitad del horario de apertura."""
+    return fecha_habil.replace(hour=14, minute=30, second=0)
+
+
+@pytest.fixture
+def fecha_antes_de_cerrar(fecha_habil):
+    """Genera una fecha válida justo antes de cerrar (18:59:59)."""
+    return fecha_habil.replace(hour=18, minute=59, second=59)
+
+
+@pytest.fixture
+def fecha_al_cerrar(fecha_habil):
+    """Genera una fecha inválida justo a la hora de cierre (19:00:00)."""
+    return fecha_habil.replace(hour=19, minute=0, second=0)
+
+
+@pytest.fixture
+def fecha_pasada():
+    """Genera una fecha en el pasado."""
+    return datetime.now() - timedelta(days=365)
+
+
+@pytest.fixture
+def fecha_futura_valida():
+    """Genera una fecha futura válida dentro del horario hábil."""
+    fecha = datetime.now() + timedelta(days=30)
+    while (
+        fecha.weekday() == 0
+        or (fecha.day == 25 and fecha.month == 12)
+        or (fecha.day == 1 and fecha.month == 1)
+    ):
+        fecha += timedelta(days=1)
+    return fecha.replace(hour=14, minute=0, second=0, microsecond=0)
+
+
 # ====================================================================
 # PRUEBAS DE INTEGRACIÓN
 # ====================================================================
@@ -135,7 +217,7 @@ def test_comprar_entradas_parque_cerrado_falla(
     Verifica que el flujo falla con ParqueCerradoError.
     """
     datos_dia_cerrado = datos_compra_validos.copy()
-    fecha_lunes = datetime(2025, 10, 20, 12, 0, 0) # Lunes
+    fecha_lunes = datetime(2025, 11, 10, 12, 0, 0) # Lunes
     datos_dia_cerrado["fecha_visita"] = fecha_lunes.isoformat()
 
     mocker.patch.object(
@@ -506,76 +588,84 @@ def test_validar_valor_pase_valido_pasa(servicio_compra):
 
 # --- PRUEBAS UNITARIAS: VALIDACIÓN DE FECHA Y HORA DE VISITA ---
 
-def test_validar_fecha_dia_habil_pasa(servicio_compra):
-    fecha_habil = datetime(2025, 10, 22, 12, 0, 0)  # Miércoles
+def test_validar_fecha_dia_habil_pasa(servicio_compra, fecha_habil):
     try:
         servicio_compra._validar_fecha_hora_visita(fecha_habil)
     except ParqueCerradoError:
-        pytest.fail("La validación no debería haber fallado en un día hábil.")
-        
-def test_validar_fecha_falla_en_lunes(servicio_compra):
-     fecha_lunes = datetime(2025, 10, 20, 12, 0, 0)  
-     with pytest.raises(ParqueCerradoError):
-         servicio_compra._validar_fecha_hora_visita(fecha_lunes)
-         
+        pytest.fail(f"La validación no debería haber fallado en un día hábil: {fecha_habil}")
+
+
+def test_validar_fecha_falla_en_lunes(servicio_compra, fecha_no_habil):
+    with pytest.raises(ParqueCerradoError):
+        servicio_compra._validar_fecha_hora_visita(fecha_no_habil)
+
+
 def test_validar_fecha_25_diciembre_falla(servicio_compra):
-    fecha_navidad = datetime(2025, 12, 25, 12, 0, 0)
+    año = datetime.now().year
+    fecha_navidad = datetime(año, 12, 25, 12, 0, 0)
     with pytest.raises(ParqueCerradoError):
         servicio_compra._validar_fecha_hora_visita(fecha_navidad)
 
+
 def test_validar_fecha_1_enero_falla(servicio_compra):
-    fecha_ano_nuevo = datetime(2026, 1, 1, 12, 0, 0)
+    año = datetime.now().year + 1
+    fecha_ano_nuevo = datetime(año, 1, 1, 12, 0, 0)
     with pytest.raises(ParqueCerradoError):
         servicio_compra._validar_fecha_hora_visita(fecha_ano_nuevo)
 
+
 def test_validar_fecha_lunes_feriado_falla(servicio_compra):
-    fecha_especial = datetime(2024, 1, 1, 12, 0, 0) # 1 de Enero de 2024 fue lunes
+    # Busca el próximo 1 de enero que caiga lunes
+    fecha = datetime.now()
+    while not (fecha.day == 1 and fecha.month == 1 and fecha.weekday() == 0):
+        fecha += timedelta(days=1)
+    fecha = fecha.replace(hour=12)
     with pytest.raises(ParqueCerradoError):
-        servicio_compra._validar_fecha_hora_visita(fecha_especial)
+        servicio_compra._validar_fecha_hora_visita(fecha)
 
-def test_validar_horario_antes_de_abrir_falla(servicio_compra):
-    fecha_valida = datetime(2025, 10, 22, 8, 59, 59)
+
+def test_validar_horario_antes_de_abrir_falla(servicio_compra, fecha_fuera_de_horario):
     with pytest.raises(ParqueCerradoError):
-        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_fuera_de_horario)
 
-def test_validar_horario_al_abrir_pasa(servicio_compra):
-    fecha_valida = datetime(2025, 10, 22, 9, 0, 0)
+
+def test_validar_horario_al_abrir_pasa(servicio_compra, fecha_al_abrir):
     try:
-        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_al_abrir)
     except ParqueCerradoError:
         pytest.fail("La validación no debería haber fallado a la hora de apertura.")
 
-def test_validar_horario_durante_el_dia_pasa(servicio_compra):
-    fecha_valida = datetime(2025, 10, 22, 14, 30, 0)
+
+def test_validar_horario_durante_el_dia_pasa(servicio_compra, fecha_durante_dia):
     try:
-        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_durante_dia)
     except ParqueCerradoError:
         pytest.fail("La validación no debería haber fallado durante el horario hábil.")
 
-def test_validar_horario_antes_de_cerrar_pasa(servicio_compra):
-    fecha_valida = datetime(2025, 10, 22, 18, 59, 59)
+
+def test_validar_horario_antes_de_cerrar_pasa(servicio_compra, fecha_antes_de_cerrar):
     try:
-        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_antes_de_cerrar)
     except ParqueCerradoError:
         pytest.fail("La validación no debería haber fallado justo antes de la hora de cierre.")
 
-def test_validar_horario_al_cerrar_falla(servicio_compra):
-    fecha_valida = datetime(2025, 10, 22, 19, 0, 0)
+
+def test_validar_horario_al_cerrar_falla(servicio_compra, fecha_al_cerrar):
     with pytest.raises(ParqueCerradoError):
-        servicio_compra._validar_fecha_hora_visita(fecha_valida)
+        servicio_compra._validar_fecha_hora_visita(fecha_al_cerrar)
 
-def test_validar_fecha_pasada_falla(servicio_compra):
-    fecha_pasada = datetime(2024, 10, 22, 12, 0, 0) 
 
-    with pytest.raises(FechaInvalidaError) as excinfo:
+def test_validar_fecha_pasada_falla(servicio_compra, fecha_pasada):
+    with pytest.raises(FechaInvalidaError):
         servicio_compra._validar_fecha_hora_visita(fecha_pasada)
 
-def test_validar_fecha_futura_valida_pasa(servicio_compra):
-    fecha_futura_valida = datetime(2026, 10, 22, 14, 0, 0) 
+
+def test_validar_fecha_futura_valida_pasa(servicio_compra, fecha_futura_valida):
     try:
         servicio_compra._validar_fecha_hora_visita(fecha_futura_valida)
-    except (FechaInvalidaError, ParqueCerradoError) as e: 
+    except (FechaInvalidaError, ParqueCerradoError) as e:
         pytest.fail(f"La validación falló inesperadamente para una fecha futura válida: {e}")
+
 
 # --- PRUEBAS UNITARIAS: VALIDACIÓN DE CANTIDAD DE ENTRADAS ---
 
