@@ -5,6 +5,7 @@ from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRe
 from datetime import datetime, timedelta
 
 from .repositories import PaseRepository
+from .models import Compra
 
 
 # Asegúrate de que las excepciones necesarias están definidas en excepciones.py
@@ -19,14 +20,47 @@ class ServicioCompraEntradas:
         self.servicio_calendario = servicio_calendario
         self.pase_repository = pase_repository  # <-- Nueva dependencia inyectada
 
-    # 1. Método Principal (Debe fallar para los tests de integración)
-    def comprar_entradas(self, usuario: User, cantidad: int, fecha_visita: str, tipo_pago: str, visitantes: list):
-        """
-        Método principal que orquesta la compra.
-        Debe fallar en la Fase RED.
-        """
-        # La forma más limpia para un método no implementado en el flujo principal:
-        raise NotImplementedError("Método comprar_entradas aún no implementado (Fase RED).")
+    def comprar_entradas(self, usuario: User, cantidad: int, fecha_visita: str, tipo_pago: str = None, visitantes: list = []):
+        """Método principal que orquesta la compra."""
+
+        self._validar_formato_usuario(usuario)
+        self._validar_usuario(usuario)
+        self._validar_formato_cantidad(cantidad)
+        self._validar_cantidad(cantidad, visitantes)
+        self._validar_formato_edades(visitantes)
+        self._validar_formato_pases(visitantes)
+        self._validar_valores_pases(visitantes)
+
+        fecha_obj = self._validar_formato_fecha(fecha_visita)
+        self._validar_fecha_hora_visita(fecha_obj)
+
+        #Calcular monto
+        monto_total = self._calcular_monto_total(visitantes)
+
+        #Procesar pago
+        self._gestionar_pago(monto_total, tipo_pago)
+
+        #Mapeo para coicidir con el modelo compra
+        if tipo_pago.lower() == "efectivo":
+            forma_pago_db = Compra.FormasPago.EFECTIVO
+        elif tipo_pago.lower() == "tarjeta":
+            forma_pago_db = Compra.FormasPago.TARJETA
+        else:
+            raise ValueError("Tipo de pago desconocido")
+        
+        # Creamos la compra
+        compra = Compra.objects.create(
+            usuario=usuario,
+            fecha_visita=fecha_obj,
+            monto_total=monto_total,
+            forma_pago=forma_pago_db,
+            estado_pago=Compra.EstadosPago.PENDIENTE
+        )
+
+        #Envio de mail
+        email_enviado = self._enviar_confirmacion(usuario, compra)
+
+        return compra, email_enviado
 
     def _calcular_precio_entrada(self, edad: int, tipo_pase: str) -> float:
         """Calculará el precio de una entrada según edad y tipo de pase."""
