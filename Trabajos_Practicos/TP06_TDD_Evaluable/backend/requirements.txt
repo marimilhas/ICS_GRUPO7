@@ -3,3 +3,4 @@ djangorestframework
 pytest
 pytest-django
 django-cors-headers
+pytest-mock
