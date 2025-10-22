@@ -23,12 +23,6 @@ class FormaDePagoRequeridaError(Exception):
 class EdadInvalidaError(Exception):
     pass
 
-class TipoPaseInvalidoError(Exception):
-    pass
-
-class EmailError(Exception):
-    pass
-
 class PagoRechazadoError(Exception):
     """Para cuando la pasarela de pagos rechaza una transacción."""
     pass
@@ -42,5 +36,13 @@ class TimeoutError(Exception):
     pass
 
 class ConnectionError(Exception):
+    """Para errores de conexión"""
+    pass
+
+class EmailError(Exception):
+    """Para errores de conexión"""
+    pass
+
+class TipoPaseInvalidoError(Exception):
     """Para errores de conexión"""
     pass

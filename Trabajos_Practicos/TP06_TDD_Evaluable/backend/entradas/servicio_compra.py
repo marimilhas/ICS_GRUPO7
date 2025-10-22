@@ -1,0 +1,98 @@
+# servicio_compra.py
+
+from django.contrib.auth.models import User
+from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError
+from datetime import datetime, timedelta
+
+
+# Asegúrate de que las excepciones necesarias están definidas en excepciones.py
+# from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError
+
+class ServicioCompraEntradas:
+    """Clase de la Capa de Lógica de Negocio (Service)."""
+
+    def __init__(self, pasarela_pagos, servicio_correo, servicio_calendario):
+        self.pasarela_pagos = pasarela_pagos
+        self.servicio_correo = servicio_correo
+        self.servicio_calendario = servicio_calendario
+
+    # 1. Método Principal (Debe fallar para los tests de integración)
+    def comprar_entradas(self, usuario: User, cantidad: int, fecha_visita: str, tipo_pago: str, visitantes: list):
+        """
+        Método principal que orquesta la compra.
+        Debe fallar en la Fase RED.
+        """
+        # La forma más limpia para un método no implementado en el flujo principal:
+        raise NotImplementedError("Método comprar_entradas aún no implementado (Fase RED).")
+
+    # 2. Métodos de Cálculo (Deben fallar para los tests de precio/monto)
+    def _calcular_precio_entrada(self, edad: int, tipo_pase: str) -> float:
+        """Calculará el precio de una entrada según edad y tipo de pase."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _calcular_monto_total(self, visitantes: list) -> float:
+        """Calculará el monto total sumando todos los precios individuales."""
+        # Nota: Este método ya tiene un NotImplementedError en el código que devolviste.
+        # Si se deja así, todos los tests de cálculo fallarán con este error.
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    # 3. Métodos de Validación (Deben fallar con NotImplementedError)
+
+    def _validar_cantidad(self, cantidad, visitantes):
+        """Valida límites y consistencia de cantidad."""
+        # Se elimina la implementación parcial que haría pasar algunos tests:
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _validar_fecha_hora_visita(self, fecha):
+        """Valida día hábil, feriados y horario de apertura."""
+        # Se elimina la implementación parcial que haría pasar algunos tests:
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _validar_valores_pases(self, visitantes: list):
+        """
+        Valida que los 'tipo_pase' existan (ej. 'Regular', 'VIP').
+        Será implementado en fase GREEN.
+        """
+        raise NotImplementedError("Método pendiente de implementación")
+
+    def _validar_formato_fecha(self, fecha_str: str) -> datetime:
+        """Valida que la fecha sea un string con formato ISO 8601."""
+        # Se elimina la implementación completa que haría pasar todos los tests de formato de fecha:
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _validar_formato_cantidad(self, cantidad):
+        """Valida que la cantidad sea un entero."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _validar_formato_edades(self, visitantes: list):
+        """Valida que la clave 'edad' exista, sea un entero y no sea negativa/muy alta."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _validar_formato_pases(self, visitantes: list):
+        """Valida que la clave 'tipo_pase' exista, sea un string y no esté vacío/None/tipo incorrecto."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _validar_formato_usuario(self, usuario):
+        """
+        Valida que el objeto usuario tenga la estructura esperada.
+        Será implementado en fase GREEN.
+        """
+        raise NotImplementedError("Método pendiente de implementación")
+
+    def _validar_usuario(self, usuario: User):
+        """Valida que el usuario esté registrado."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    # 4. Métodos de Proceso (Deben fallar con NotImplementedError)
+
+    def _gestionar_pago(self, monto_total: float, tipo_pago: str) -> bool:
+        """Procesa el pago."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _enviar_confirmacion(self, usuario: User, compra):
+        """Envía el correo de confirmación de la compra."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+    def _enviar_notificacion(self, usuario: User, compra):
+        """Envía notificaciones."""
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")

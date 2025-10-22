@@ -1,0 +1,30 @@
+# ## Archivos de Entorno Virtual y Dependencias ##
+# Ignorar el entorno virtual completo
+.venv/
+venv/
+
+# ## Cachés de Python y Herramientas ##
+# Bytecode compilado de Python
+__pycache__/
+*.pyc
+# Caché de Pytest
+.pytest_cache/
+
+# ## Base de Datos de Desarrollo ##
+# Ignorar la base de datos SQLite
+db.sqlite3
+
+# ## Archivos de Configuración Sensibles ##
+# Nunca subir archivos con secretos
+.env
+.env.*
+!/.env.example
+
+# ## Archivos del Sistema Operativo ##
+.DS_Store
+Thumbs.db
+
+# ## Archivos de IDEs/Editores (Opcional, pero recomendado) ##
+.idea/
+.vscode/
+*.swp
