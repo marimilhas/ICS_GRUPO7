@@ -257,8 +257,28 @@ class ServicioCompraEntradas:
 
 
     def _enviar_confirmacion(self, usuario: User, compra):
-        """Envía el correo de confirmación de la compra."""
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        """
+        Envía el correo de confirmación de la compra.
+        Devuelve True si el envío fue exitoso, False en caso contrario.
+        """
+
+        try:
+            # Llamar al servicio de correo con los parámetros esperados
+            resultado = self.servicio_correo.enviar_confirmacion(
+                mail=usuario.email,
+                compra_details=compra.__dict__
+            )
+
+            # Si el servicio devolvió True, se considera exitoso
+            if resultado:
+                return True
+            else:
+                # Si el servicio devolvió False, se maneja como fallo
+                return False
+
+        except Exception:
+            # Si ocurre cualquier excepción (error de red, etc.), manejarla
+            return False
 
     def _enviar_notificacion(self, usuario: User, compra):
         """Envía notificaciones."""

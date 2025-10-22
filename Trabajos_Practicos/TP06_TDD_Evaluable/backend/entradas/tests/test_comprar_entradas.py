@@ -51,6 +51,7 @@ def mocks_infraestructura():
     }
     mocks['servicio_calendario'].es_dia_abierto.return_value = True
     mocks['pasarela_pagos'].procesar_pago.return_value = True
+    mocks['servicio_correo'].enviar_confirmacion.return_value = True
     return mocks
 
 @pytest.fixture
