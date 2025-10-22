@@ -82,9 +82,17 @@ class ServicioCompraEntradas:
         Valida que la fecha sea en un dia donde el parque esté abierto (ni lunes, ni feriados como navidad o año nuevo),
         que se compre durante horario habilitado
         """
+        #Creamos las fechas y horas necesarias para comparacion
+        dia_fecha = fecha.weekday()
+        navidad = datetime(fecha.year, month=12, day=25) + timedelta(hours=fecha.hour, minutes=fecha.minute, seconds=fecha.second)
+        anio_nuevo = datetime(fecha.year, month=1, day=1) + timedelta(hours=fecha.hour, minutes=fecha.minute, seconds=fecha.second)
+        hora_fecha = fecha.hour
 
-        # La forma más limpia para un método no implementado en el flujo principal:
-        raise NotImplementedError("Método comprar_entradas aún no implementado (Fase RED).")
+        if fecha == navidad or fecha == anio_nuevo or dia_fecha == 0 or hora_fecha < 9 or hora_fecha >= 19:
+            raise ParqueCerradoError
+
+        if fecha < datetime.now():
+            raise FechaInvalidaError
 
     def _validar_valores_pases(self, visitantes: list):
         """
