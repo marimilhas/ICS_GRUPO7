@@ -9,7 +9,7 @@ import Footer from "./components/Footer";
 function App() {
   const [compra, setCompra] = useState(null);
   const [mensajeMail, setMensajeMail] = useState("");
-  const [pasoActual, setPasoActual] = useState("formulario"); // "formulario", "resumen", "confirmacion"
+  const [pasoActual, setPasoActual] = useState("formulario");
 
   const manejarCompraExitosa = (compraData, mailMsg) => {
     setCompra(compraData);
@@ -18,8 +18,20 @@ function App() {
   };
 
   const manejarConfirmacion = () => {
+  // Simular envío de email y pago
+  console.log("Enviando email de confirmación...");
+  
+  if (compra && compra.forma_pago === 'tarjeta') {
+    console.log("Redirigiendo a Mercado Pago...");
+    // Aquí simularías la redirección a Mercado Pago
+    // window.location.href = "https://mercadopago.com/checkout";
+  }
+  
+  // Simular éxito después de un breve delay
+  setTimeout(() => {
     setPasoActual("confirmacion");
-  };
+  }, 1000);
+};
 
   const manejarNuevaCompra = () => {
     setCompra(null);
@@ -29,12 +41,10 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-emerald-100 text-gray-800">
-      {/* Encabezado */}
       <Header />
 
-      {/* Contenido central */}
       <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Indicador de Pasos */}
+        {/* Indicador de Pasos - SIN CAMBIOS */}
         <div className="max-w-4xl mx-auto mb-8">
           <div className="flex items-center justify-center">
             {/* Paso 1: Formulario */}
@@ -55,7 +65,6 @@ function App() {
               </span>
             </div>
 
-            {/* Línea conectadora */}
             <div className="w-16 h-1 bg-green-300 mx-2"></div>
 
             {/* Paso 2: Resumen */}
@@ -76,7 +85,6 @@ function App() {
               </span>
             </div>
 
-            {/* Línea conectadora */}
             <div className="w-16 h-1 bg-green-300 mx-2"></div>
 
             {/* Paso 3: Confirmación */}
@@ -97,12 +105,11 @@ function App() {
           </div>
         </div>
 
-        {/* Título Principal */}
-        <h1 className="text-4xl font-extrabold text-center text-green-800 mb-12 flex items-center justify-center gap-3">
+        <h1 className="text-4xl font-extrabold text-center text-green-800 mb-12">
           EcoHarmony Park - Entradas
         </h1>
 
-        {/* Contenido Dinámico */}
+        {/* Contenido Dinámico - SIN CAMBIOS */}
         {pasoActual === "formulario" && (
           <FormularioCompra onCompra={manejarCompraExitosa} />
         )}
@@ -129,20 +136,19 @@ function App() {
 
         {pasoActual === "confirmacion" && compra && mensajeMail && (
           <div className="max-w-4xl mx-auto">
-            <Confirmacion mensaje={mensajeMail} />
+            <Confirmacion mensaje={mensajeMail} compra={compra} />
             <div className="text-center mt-6">
               <button
                 onClick={manejarNuevaCompra}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow transition-all"
               >
-                 Realizar Nueva Compra
+                Realizar Nueva Compra
               </button>
             </div>
           </div>
         )}
       </main>
 
-      {/* Pie */}
       <Footer />
     </div>
   );
