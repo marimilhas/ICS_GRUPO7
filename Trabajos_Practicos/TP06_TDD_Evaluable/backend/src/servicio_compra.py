@@ -1,4 +1,4 @@
-from src.modelo import LimiteEntradasExcedidoError, Usuario
+from Trabajos_Practicos.TP06_TDD_Evaluable.backend.src.exceptions import LimiteEntradasExcedidoError, Usuario
 
 class ServicioCompraEntradas:
     """Clase de la Capa de Lógica de Negocio (Service)."""
@@ -30,6 +30,13 @@ class ServicioCompraEntradas:
     def _calcular_monto_total(self, visitantes: list) -> float:
         """
         Calculará el monto total sumando todos los precios individuales.
+        Será implementado en fase GREEN.
+        """
+        raise NotImplementedError("Método pendiente de implementación en fase GREEN")
+
+    def _gestionar_pago(self, monto_total: float, tipo_pago: str) -> bool:
+        """
+        Procesará el pago según el tipo de pago.
         Será implementado en fase GREEN.
         """
         raise NotImplementedError("Método pendiente de implementación en fase GREEN")

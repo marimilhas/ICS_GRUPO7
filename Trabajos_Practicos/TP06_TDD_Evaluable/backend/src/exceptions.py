@@ -20,6 +20,13 @@ class FechaInvalidaError(Exception):
 class FormaDePagoRequeridaError(Exception):
     pass
 
+class EdadInvalidaError(Exception):
+    pass
+
+class PagoRechazadoError(Exception):
+    """Para cuando la pasarela de pagos rechaza una transacción."""
+    pass
+
 class PermissionError(Exception):
     """Para cuando el usuario no tiene permisos"""
     pass

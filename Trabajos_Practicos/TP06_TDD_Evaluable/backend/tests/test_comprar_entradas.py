@@ -6,7 +6,7 @@ from datetime import date
 from unittest.mock import MagicMock, Mock
 
 # Importar las clases y excepciones (asumiendo que existen en el modelo)
-from src.modelo import LimiteEntradasExcedidoError, FechaInvalidaError, ParqueCerradoError
+from Trabajos_Practicos.TP06_TDD_Evaluable.backend.src.exceptions import LimiteEntradasExcedidoError, FechaInvalidaError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError
 from src.servicio_compra import ServicioCompraEntradas
 
 # --- FIXTURES ---
@@ -19,6 +19,11 @@ def sistema():
 def usuario_valido_mock():
     """Retorna un mock que simula un objeto Usuario ya cargado y válido."""
     return Mock(nombre="Juan Pérez", email="juan@example.com", esta_registrado=True)
+
+@pytest.fixture
+def usuario_no_valido_mock():
+    """Retorna un mock que simula un objeto Usuario ya cargado y válido."""
+    return Mock(nombre="Martina González", email="matina@example.com", esta_registrado=False)
 
 @pytest.fixture
 def datos_compra_validos():
@@ -50,55 +55,41 @@ def servicio_compra(mocks_infraestructura):
     """Fixture que inicializa y retorna una nueva instancia de ServicioCompraEntradas."""
     return ServicioCompraEntradas(**mocks_infraestructura)
 
-# --- Pruebas unitarias: Validación de cantidad de entradas ---
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE FECHA Y HORA ---
 
-def test_validar_cantidad_mayor_a_10_falla(servicio_compra):
-    """Prueba: la validación falla con más de 10 entradas."""
-    cantidad_invalida = 11
-    visitantes_mock = [{}] * cantidad_invalida
-    with pytest.raises(LimiteEntradasExcedidoError, match="La cantidad de entradas no puede ser mayor a 10."):
-        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
-
-def test_validar_cantidad_cero_falla(servicio_compra):
-    """Prueba: la validación falla con 0 entradas."""
-    cantidad_invalida = 0
-    visitantes_mock = []
-    with pytest.raises(ValueError, match="La cantidad de entradas debe ser al menos 1."):
-        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
-
-def test_validar_cantidad_negativa_negativa(servicio_compra):
-    """Prueba: la validación falla con cantidad negativa de entradas."""
-    cantidad_invalida = -1
-    visitantes_mock = []
-    with pytest.raises(ValueError, match="La cantidad de entradas debe ser al menos 1."):
-        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
-
-def test_validar_cantidad_no_coincide_con_visitantes_falla(servicio_compra):
-    """Prueba: la validación falla si la cantidad no coincide con el nro de visitantes."""
-    cantidad_valida = 5
-    visitantes_incorrectos = [{}] * 3 
-    with pytest.raises(ValueError, match="La cantidad de entradas debe ser igual al nro de visitantes."):
-        servicio_compra._validar_cantidad(cantidad=cantidad_valida, visitantes=visitantes_incorrectos)
-
-def test_validar_cantidad_datos_validos_pasa(servicio_compra):
-    """Prueba: la validación pasa si la cantidad está entre 1-10 y coincide con visitantes."""
-    cantidad_valida = 7
-    visitantes_validos = [{}] * cantidad_valida
+def test_validar_formato_fecha_formato_correcto_pasa(servicio_compra):
+    """ Pasa si el string tiene el formato ISO 8601. """
+    fecha_valida = "2025-11-15T10:30:00"
     try:
-        servicio_compra._validar_cantidad(cantidad=cantidad_valida, visitantes=visitantes_validos)
-    except (LimiteEntradasExcedidoError, ValueError):
-        pytest.fail("La validación no debería haber fallado con datos válidos.")
+        fecha = servicio_compra._validar_formato_fecha(fecha_valida)
+        assert isinstance(fecha, datetime)
+        assert fecha.year == 2025
+        assert fecha.hour == 10
+    except ValueError:
+        pytest.fail("La validación de formato no debería haber fallado.")
 
-def test_validar_cantidad_limite_exacto_10_pasa(servicio_compra):
-    """Prueba: la validación pasa si la cantidad es exactamente 10 y coincide con visitantes."""
-    cantidad_limite = 10
-    visitantes_validos = [{}] * cantidad_limite
-    try:
-        servicio_compra._validar_cantidad(cantidad=cantidad_limite, visitantes=visitantes_validos)
-    except (LimiteEntradasExcedidoError, ValueError):
-        pytest.fail("La validación no debería haber fallado con la cantidad límite de 10.")
-        
-# --- Pruebas unitarias: Validación de fecha y hora ---
+def test_validar_formato_fecha_formato_incorrecto_falla(servicio_compra):
+    """ Falla si el string no tiene el formato ISO 8601. """
+    fecha_str_invalida = "15/11/2025 10:30"
+    with pytest.raises(ValueError, match="El formato de la fecha es inválido."):
+        servicio_compra._validar_formato_fecha(fecha_str_invalida)
+
+def test_validar_formato_fecha_vacio_falla(servicio_compra):
+    """ Falla si el string de fecha está vacío. """
+    with pytest.raises(ValueError, match="La fecha de visita no fue proporcionada."):
+        servicio_compra._validar_formato_fecha("")
+
+def test_validar_formato_fecha_none_falla(servicio_compra):
+    """ Falla si se pasa None en lugar de un string. """
+    with pytest.raises(ValueError, match="La fecha de visita no fue proporcionada."):
+        servicio_compra._validar_formato_fecha(None)
+
+def test_validar_formato_fecha_tipo_incorrecto_falla(servicio_compra):
+    """ Falla si se pasa algo que no es un string. """
+    with pytest.raises(ValueError, match="La fecha de visita debe ser un texto"):
+        servicio_compra._validar_formato_fecha(12345)
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FECHA Y HORA DE VISITA ---
 
 def test_validar_fecha_dia_habil_pasa(servicio_compra):
     fecha_habil = datetime(2025, 10, 22, 12, 0, 0)  # Miércoles
@@ -169,7 +160,197 @@ def test_validar_fecha_futura_pasa(servicio_compra):
 
     servicio_compra._validar_fecha_hora_visita(fecha_futura)
 
-# --- PRUEBAS RED: Cálculo de Precios y Montos ---
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE CANTIDAD DE ENTRADAS ---
+
+def test_validar_formato_cantidad_entero_pasa(servicio_compra):
+    """ Pasa si la cantidad es un entero. """
+    cantidad_valida = 5
+    try:
+        servicio_compra._validar_formato_cantidad(cantidad_valida)
+    except ValueError:
+        pytest.fail("La validación de formato no debería haber fallado para un entero.")
+
+def test_validar_formato_cantidad_string_falla(servicio_compra):
+    """ Falla si la cantidad es un string. """
+    cantidad_invalida = "5"
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser un número entero."):
+        servicio_compra._validar_formato_cantidad(cantidad_invalida)
+
+def test_validar_formato_cantidad_float_falla(servicio_compra):
+    """ Falla si la cantidad es un float. """
+    cantidad_invalida = 5.0
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser un número entero."):
+        servicio_compra._validar_formato_cantidad(cantidad_invalida)
+
+def test_validar_formato_cantidad_none_falla(servicio_compra):
+    """ Falla si la cantidad es None. """
+    cantidad_invalida = None
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser un número entero."):
+        servicio_compra._validar_formato_cantidad(cantidad_invalida)
+
+def test_validar_formato_cantidad_otro_tipo_falla(servicio_compra):
+    """ Falla si la cantidad es otro tipo (ej. lista)."""
+    cantidad_invalida = [5]
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser un número entero"):
+        servicio_compra._validar_formato_cantidad(cantidad_invalida)
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE CANTIDAD DE ENTRADAS ---
+
+def test_validar_cantidad_mayor_a_10_falla(servicio_compra):
+    """ La validación falla con más de 10 entradas."""
+    cantidad_invalida = 11
+    visitantes_mock = [{}] * cantidad_invalida
+    with pytest.raises(LimiteEntradasExcedidoError, match="La cantidad de entradas no puede ser mayor a 10."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
+
+def test_validar_cantidad_cero_falla(servicio_compra):
+    """ La validación falla con 0 entradas. """
+    cantidad_invalida = 0
+    visitantes_mock = []
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser al menos 1."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
+
+def test_validar_cantidad_negativa_negativa(servicio_compra):
+    """ La validación falla con cantidad negativa de entradas."""
+    cantidad_invalida = -1
+    visitantes_mock = []
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser al menos 1."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_invalida, visitantes=visitantes_mock)
+
+def test_validar_cantidad_no_coincide_con_visitantes_falla(servicio_compra):
+    """ La validación falla si la cantidad no coincide con el nro de visitantes."""
+    cantidad_valida = 5
+    visitantes_incorrectos = [{}] * 3 
+    with pytest.raises(ValueError, match="La cantidad de entradas debe ser igual al nro de visitantes."):
+        servicio_compra._validar_cantidad(cantidad=cantidad_valida, visitantes=visitantes_incorrectos)
+
+def test_validar_cantidad_datos_validos_pasa(servicio_compra):
+    """ La validación pasa si la cantidad está entre 1-10 y coincide con visitantes."""
+    cantidad_valida = 7
+    visitantes_validos = [{}] * cantidad_valida
+    try:
+        servicio_compra._validar_cantidad(cantidad=cantidad_valida, visitantes=visitantes_validos)
+    except (LimiteEntradasExcedidoError, ValueError):
+        pytest.fail("La validación no debería haber fallado con datos válidos.")
+
+def test_validar_cantidad_limite_exacto_10_pasa(servicio_compra):
+    """ La validación pasa si la cantidad es exactamente 10 y coincide con visitantes."""
+    cantidad_limite = 10
+    visitantes_validos = [{}] * cantidad_limite
+    try:
+        servicio_compra._validar_cantidad(cantidad=cantidad_limite, visitantes=visitantes_validos)
+    except (LimiteEntradasExcedidoError, ValueError):
+        pytest.fail("La validación no debería haber fallado con la cantidad límite de 10.")
+    
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE EDADES ---
+
+def test_validar_formato_edades_edad_negativa_falla(servicio_compra):
+    """ Falla si alguna edad es negativa. """
+    visitantes_invalidos = [
+        {"edad": 30, "tipo_pase": "Regular"},
+        {"edad": -5, "tipo_pase": "VIP"} 
+    ]
+    with pytest.raises(EdadInvalidaError, match="La edad no puede ser negativa"):
+        servicio_compra._validar_formato_edades(visitantes_invalidos)
+
+def test_validar_formato_edades_edad_string_falla(servicio_compra):
+    """ Falla si alguna edad es un string. """
+    visitantes_invalidos = [
+        {"edad": 30, "tipo_pase": "Regular"},
+        {"edad": "veinte", "tipo_pase": "VIP"} 
+    ]
+    with pytest.raises(EdadInvalidaError, match="La edad debe ser un número entero"):
+        servicio_compra._validar_formato_edades(visitantes_invalidos)
+
+def test_validar_formato_edades_edad_float_falla(servicio_compra):
+    """ Falla si alguna edad es un número decimal. """
+    visitantes_invalidos = [
+        {"edad": 30.5, "tipo_pase": "Regular"},
+        {"edad": 10, "tipo_pase": "VIP"}
+    ]
+    with pytest.raises(EdadInvalidaError, match="La edad debe ser un número entero"):
+        servicio_compra._validar_formato_edades(visitantes_invalidos)
+
+def test_validar_formato_edades_edad_none_falla(servicio_compra):
+    """ Falla si alguna edad es None. """
+    visitantes_invalidos = [
+        {"edad": 30, "tipo_pase": "Regular"},
+        {"edad": None, "tipo_pase": "VIP"} 
+    ]
+    with pytest.raises(EdadInvalidaError, match="La edad debe ser un número entero"): 
+        servicio_compra._validar_formato_edades(visitantes_invalidos)
+
+def test_validar_formato_edades_falta_clave_edad_falla(servicio_compra):
+    """ Falla si a un visitante le falta el atributo 'edad'. """
+    visitantes_invalidos = [
+        {"tipo_pase": "Regular"}, 
+        {"edad": 10, "tipo_pase": "VIP"}
+    ]
+    with pytest.raises(EdadInvalidaError, match="Falta 'edad' para un visitante"):
+        servicio_compra._validar_formato_edades(visitantes_invalidos)
+
+def test_validar_formato_edades_edades_validas_pasa(servicio_compra):
+    """ Pasa si todas las edades son enteros positivos. """
+    visitantes_validos = [
+        {"edad": 25, "tipo_pase": "Regular"},
+        {"edad": 10, "tipo_pase": "VIP"},
+        {"edad": 5, "tipo_pase": "Regular"}
+    ]
+    try:
+        servicio_compra._validar_formato_edades(visitantes_validos)
+    except EdadInvalidaError:
+        pytest.fail("La validación de edades no debería haber fallado.")
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE PASES ---    
+
+def test_validar_formato_pases_validos_pasa(servicio_compra):
+    """ Pasa si todos los 'tipo_pase' son strings válidos. """
+    visitantes_validos = [
+        {"edad": 30, "tipo_pase": "Regular"},
+        {"edad": 10, "tipo_pase": "VIP"}
+    ]
+    try:
+        servicio_compra._validar_formato_pases(visitantes_validos)
+    except ValueError:
+        pytest.fail("La validación de formato de pases no debería haber fallado.")
+
+def test_validar_formato_pases_falta_clave_falla(servicio_compra):
+    """ Falla si a un visitante le falta la clave 'tipo_pase'."""
+    visitantes_invalidos = [
+        {"edad": 30}, 
+        {"edad": 10, "tipo_pase": "VIP"}
+    ]
+    with pytest.raises(ValueError, match="Falta la clave 'tipo_pase'"):
+        servicio_compra._validar_formato_pases(visitantes_invalidos)
+
+def test_validar_formato_pases_none_falla(servicio_compra):
+    """ Falla si 'tipo_pase' es None. """
+    visitantes_invalidos = [
+        {"edad": 30, "tipo_pase": "Regular"},
+        {"edad": 10, "tipo_pase": None}
+    ]
+    with pytest.raises(ValueError, match="El 'tipo_pase' debe ser texto"):
+        servicio_compra._validar_formato_pases(visitantes_invalidos)
+
+def test_validar_formato_pases_vacio_falla(servicio_compra):
+    """ Falla si 'tipo_pase' es un string vacío. """
+    visitantes_invalidos = [
+        {"edad": 30, "tipo_pase": ""},
+        {"edad": 10, "tipo_pase": "VIP"}
+    ]
+    with pytest.raises(ValueError, match="El 'tipo_pase' no puede estar vacío"):
+        servicio_compra._validar_formato_pases(visitantes_invalidos)
+
+def test_validar_formato_pases_falla_con_tipo_incorrecto(servicio_compra):
+    """ Falla si 'tipo_pase' no es un string (ej. un número)."""
+    visitantes_invalidos = [
+        {"edad": 30, "tipo_pase": 123},
+        {"edad": 10, "tipo_pase": "VIP"}
+    ]
+    with pytest.raises(ValueError, match="El 'tipo_pase' debe ser texto"):
+        servicio_compra._validar_formato_pases(visitantes_invalidos)
+
+# --- PRUEBAS UNITARIAS: CÁLCULO DE PRECIOS Y MONTOS ---
 
 def test_calcular_precio_menor_3_anos_regular(servicio_compra):
     """Prueba RED: menores de 3 con pase Regular entran gratis."""
@@ -440,237 +621,169 @@ def test_calcular_monto_total_solo_vip(servicio_compra):
         monto_total = servicio_compra._calcular_monto_total(visitantes)
         assert monto_total == 20000  # 5000 + 10000 + 5000
 
-# --- PRUEBAS RED: Proceso de Compra Completo ---
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMA DE PAGO ---
 
-def test_comprar_entradas_proceso_completo_exitoso(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: proceso completo de compra exitoso"""
-    with pytest.raises(AttributeError):
-        # Mockear todas las dependencias externas
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
-        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
-        
-        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_compra_validos)
+def test_gestionar_pago_falla_sin_forma_pago_falla(servicio_compra):
+    """Prueba: Falla si tipo_pago es None."""
+    monto_ejemplo = 15000.00
+    with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
+        servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=None)
 
-# --- PRUEBAS RED: Validación de Forma de Pago ---
+def test_gestionar_pago_falla_forma_pago_invalida_falla(servicio_compra):
+    """Prueba: Falla si tipo_pago es un string no reconocido."""
+    monto_ejemplo = 15000.00
+    tipo_invalido = "Cheque"
+    with pytest.raises(ValueError, match=f"Forma de pago inválida: '{tipo_invalido}' no reconocido"):
+        servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_invalido)
 
-def test_comprar_entradas_sin_forma_pago_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar sin seleccionar forma de pago debe fallar"""
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["tipo_pago"] = None
+def test_gestionar_pago_forma_pago_efectivo_pasa(servicio_compra):
+    """Prueba: Con 'Efectivo', retorna True y NO llama a la pasarela."""
+    monto_ejemplo = 10000.00
+    tipo_pago = "Efectivo"
+
+    pago_exitoso = servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_pago)
+
+    assert pago_exitoso is True
+    servicio_compra.pasarela_pagos.procesar_pago.assert_not_called()
+
+def test_gestionar_pago_forma_pago_tarjeta_pasa(servicio_compra):
+    """Prueba: Con 'Tarjeta', llama a pasarela y retorna True si el pago es OK."""
+    monto_ejemplo = 20000.00
+    tipo_pago = "Tarjeta"
+    servicio_compra.pasarela_pagos.procesar_pago.return_value = True
+
+    pago_exitoso = servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_pago)
+
+    assert pago_exitoso is True
+    servicio_compra.pasarela_pagos.procesar_pago.assert_called_once_with(monto=monto_ejemplo)
+
+def test_gestionar_pago_forma_pago_tarjeta_rechazada_falla(servicio_compra):
+    """Prueba: Con 'Tarjeta', lanza PagoRechazadoError si la pasarela falla."""
+    monto_ejemplo = 5000.00
+    tipo_pago = "Tarjeta"
+    servicio_compra.pasarela_pagos.procesar_pago.return_value = False
+
+    with pytest.raises(PagoRechazadoError, match="El pago fue rechazado"):
+        servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_pago)
+
+    servicio_compra.pasarela_pagos.procesar_pago.assert_called_once_with(monto=monto_ejemplo)
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE ENVÍO DE CONFIRMACIÓN VÍA MAIL ---
+
+def test_enviar_confirmacion_datos_validos_pasa(servicio_compra, usuario_valido_mock):
+    """ Verifica que se llama al servicio de correo con los argumentos correctos."""
+    mock_correo = servicio_compra.servicio_correo
+    mock_correo.enviar_correo_confirmacion.return_value = True
+
+    compra_mock = MagicMock(spec=Compra)
+    compra_mock.id = 123
+    compra_mock.monto_total = 17500.00
     
-    with pytest.raises(ValueError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+    resultado = servicio_compra._enviar_confirmacion(usuario_valido_mock, compra_mock)
 
-def test_comprar_entradas_forma_pago_efectivo_valida(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con forma de pago efectivo debe ser válido"""
-    with pytest.raises(AttributeError):
-        datos_efectivo = datos_compra_validos.copy()
-        datos_efectivo["tipo_pago"] = "Efectivo"
-        
-        # Mockear dependencias externas
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock()
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
-        
-        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_efectivo)
-        
-        # Verificar que NO se llamó a la pasarela de pagos
-        servicio_compra.pasarela_pagos.procesar_pago.assert_not_called()
-        # Verificar que SÍ se envió el email
-        servicio_compra.servicio_correo.enviar_confirmacion.assert_called_once()
+    assert resultado is True
+    mock_correo.enviar_correo_confirmacion.assert_called_once()
+    _, kwargs = mock_correo.enviar_confirmacion.call_args
+    assert kwargs.get('mail') == usuario_valido_mock.email
+    assert kwargs.get('compra_details') == compra_mock.__dict__
 
-def test_comprar_entradas_forma_pago_tarjeta_valida(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con forma de pago tarjeta debe procesar pago"""
-    with pytest.raises(AttributeError):
-        datos_tarjeta = datos_compra_validos.copy()
-        datos_tarjeta["tipo_pago"] = "Tarjeta"
-        
-        # Mockear dependencias externas
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
-        
-        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_tarjeta)
-        
-        # Verificar que SÍ se llamó a la pasarela de pagos
-        servicio_compra.pasarela_pagos.procesar_pago.assert_called_once()
-        servicio_compra.servicio_correo.enviar_confirmacion.assert_called_once()
-
-def test_comprar_entradas_pago_tarjeta_rechazado_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: pago con tarjeta rechazado debe fallar"""
-    with pytest.raises(AttributeError):
-        datos_tarjeta = datos_compra_validos.copy()
-        datos_tarjeta["tipo_pago"] = "Tarjeta"
-        
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=False)  # Pago rechazado
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock()
-        
-        with pytest.raises(Exception, match="Pago rechazado"):
-            servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_tarjeta)
-        
-        # Verificar que NO se envió email de confirmación
-        servicio_compra.servicio_correo.enviar_confirmacion.assert_not_called()
-
-# --- PRUEBAS RED: Casos de Error en Proceso de Pago ---
-
-def test_comprar_entradas_error_envio_email_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: error al enviar email debe fallar"""
-    with pytest.raises(AttributeError):
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=False)  # Email falló
-        
-        with pytest.raises(Exception, match="Error enviando confirmación"):
-            servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_compra_validos)
-
-# --- PRUEBAS RED: Días Festivos ---
-
-def test_comprar_entradas_navidad_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar para 25 de diciembre debe fallar"""
-    navidad = date(date.today().year, 12, 25)
-    # Si la navidad ya pasó este año, usar la del próximo
-    if navidad < date.today():
-        navidad = date(date.today().year + 1, 12, 25)
+def test_enviar_confirmacion_maneja_fallo_del_servicio_correo(servicio_compra, usuario_valido_mock): # 
+    """ Verifica que el método devuelve False si el servicio de correo indica un fallo. """
+    mock_correo = servicio_compra.servicio_correo
+    mock_correo.enviar_confirmacion.return_value = False
     
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["fecha_visita"] = navidad.isoformat()
-    
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+    compra_mock = MagicMock(spec=Compra)
 
-def test_comprar_entradas_año_nuevo_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar para 1ero de enero debe fallar"""
-    año_nuevo = date(date.today().year, 1, 1)
-    # Si ya pasó el 1ero de enero, usar el del próximo año
-    if año_nuevo < date.today():
-        año_nuevo = date(date.today().year + 1, 1, 1)
-    
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["fecha_visita"] = año_nuevo.isoformat()
-    
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+    resultado = servicio_compra._enviar_notificacion(usuario_valido_mock, compra_mock)
 
-# --- PRUEBAS RED: Validación de Horarios en Proceso de Compra ---
+    assert resultado is False
+    mock_correo.enviar_confirmacion.assert_called_once()
 
-def test_comprar_entradas_horario_antes_de_abrir_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario antes de las 9:00 debe fallar"""
-    datos_de_falla = datos_compra_validos.copy()
-    fecha_antes_apertura = datetime(2026, 3, 15, 8, 30, 0)  # 8:30 AM
-    datos_de_falla["fecha_visita"] = fecha_antes_apertura.isoformat()
-    
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+def test_enviar_notificacion_maneja_excepcion_del_servicio(servicio_compra, usuario_valido_mock): 
+     """Verifica cómo se maneja una excepción, usando el usuario de la fixture."""
+     mock_correo = servicio_compra.servicio_correo
+     mock_correo.enviar_confirmacion.side_effect = EmailError("Fallo simulado")
 
-def test_comprar_entradas_horario_despues_de_cerrar_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario después de las 19:00 debe fallar"""
-    datos_de_falla = datos_compra_validos.copy()
-    fecha_despues_cierre = datetime(2026, 3, 15, 19, 30, 0)  # 7:30 PM
-    datos_de_falla["fecha_visita"] = fecha_despues_cierre.isoformat()
-    
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
+     compra_mock = MagicMock(spec=Compra)
 
-def test_comprar_entradas_horario_exacto_apertura_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario exacto de apertura (9:00) debe pasar"""
-    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
-        datos_horario_valido = datos_compra_validos.copy()
-        fecha_apertura = datetime(2026, 3, 15, 9, 0, 0)  # 9:00 AM exacto
-        datos_horario_valido["fecha_visita"] = fecha_apertura.isoformat()
+     with pytest.raises(EmailError, match="Fallo simulado"):
+         servicio_compra._enviar_notificacion(usuario_valido_mock, compra_mock) 
+
+     mock_correo.enviar_confirmacion.assert_called_once()
+
+def test_enviar_confirmacion_exitoso(servicio_compra):
+    """ Verifica que se llama al servicio de correo con los datos correctos. """
+    mock_correo = servicio_compra.servicio_correo
+    mock_correo.enviar_confirmacion.return_value = True 
+    email_destino = "juan@example.com"
+    compra_mock = MagicMock(spec=Compra) 
+    compra_mock.id = 123
+    compra_mock.__dict__ = {'id': 123, 'monto': 100} 
+
+    resultado = servicio_compra._enviar_confirmacion(email_destino, compra_mock)
+
+    assert resultado is True
+    mock_correo.enviar_confirmacion.assert_called_once()
+    _, kwargs = mock_correo.enviar_confirmacion.call_args
+    assert kwargs.get('mail') == email_destino
+    assert kwargs.get('compra_details') == compra_mock.__dict__
+
+def test_enviar_confirmacion_maneja_fallo_del_servicio_correo(servicio_compra):
+    """ Verifica que el método devuelve False si el servicio de correo indica un fallo. """
+    mock_correo = servicio_compra.servicio_correo
+    mock_correo.enviar_confirmacion.return_value = False
+    email_destino = "test@fail.com"
+    compra_mock = MagicMock(spec=Compra)
+
+    resultado = servicio_compra._enviar_confirmacion(email_destino, compra_mock)
+
+    assert resultado is False
+    mock_correo.enviar_confirmacion.assert_called_once()
+
+def test_enviar_confirmacion_maneja_excepcion_del_servicio_correo(servicio_compra):
+    """ Verifica que el método devuelve False si el servicio de correo lanza una excepción (ej: error de red). """
+    mock_correo = servicio_compra.servicio_correo
+    mock_correo.enviar_confirmacion.side_effect = Exception("Fallo simulado")
+    email_destino = "error@test.com"
+    compra_mock = MagicMock(spec=Compra)
+
+    resultado = servicio_compra._enviar_confirmacion(email_destino, compra_mock)
+
+    assert resultado is False
+    mock_correo.enviar_confirmacion.assert_called_once()
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE USUARIO REGISTRADO ---
+
+def test_validar_usuario_no_registrado_falla(servicio_compra, usuario_no_valido_mock):
+    """ Falla si un usuario no registrado intenta comprar entradas. """
+    with pytest.raises(PermissionError, match="Usuario no registrado"):
+        servicio_compra._validar_usuario(usuario_no_valido_mock)
+
+def test_validar_usuario_registrado_pasa(servicio_compra, usuario_valido_mock): 
+    """ Pasa si un usuario registrado intenta comprar entradas. """
+    try:
+        servicio_compra._validar_usuario(usuario_valido_mock)
+    except PermissionError:
+        pytest.fail("La validación no debería haber fallado para un usuario registrado.")
+
+# DEJO LA ALTERNATIVA POR SI NO SE PUEDE SIMULAR EL OBJETO USUARIO EN EL FRONTEND
+
+# def test_validar_usuario_no_registrado_falla(servicio_compra):
+#     """ Falla si un usuario no registrado intenta comprar entradas."""
+#     email_no_registrado = "otro@email.com"
+
+#     with pytest.raises(PermissionError, match="Usuario no registrado"):
+#         servicio_compra._validar_usuario(email_no_registrado)
+
+# def test_validar_usuario_registrado_pasa(servicio_compra):
+#     """ Pasa si un usuario registrado intenta comprar entradas."""
+#     email_registrado = "TestUser@Example.com"
+#     try:
+#         servicio_compra._validar_usuario(email_registrado)
+#     except PermissionError:
+#         pytest.fail("La validación no debería haber fallado para el email registrado.")
         
-        # Mockear dependencias externas
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
-        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
-        
-        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
-
-def test_comprar_entradas_horario_tarde_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario de tarde (15:30) debe pasar"""
-    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
-        datos_horario_valido = datos_compra_validos.copy()
-        fecha_tarde = datetime(2026, 3, 15, 15, 30, 0)  # 3:30 PM
-        datos_horario_valido["fecha_visita"] = fecha_tarde.isoformat()
-        
-        # Mockear dependencias externas
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
-        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
-        
-        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
-
-def test_comprar_entradas_horario_noche_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario nocturno (20:00) debe fallar"""
-    datos_de_falla = datos_compra_validos.copy()
-    fecha_noche = datetime(2026, 3, 15, 20, 0, 0)  # 8:00 PM
-    datos_de_falla["fecha_visita"] = fecha_noche.isoformat()
-    
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-
-def test_comprar_entradas_horario_madrugada_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario de madrugada (2:00) debe fallar"""
-    datos_de_falla = datos_compra_validos.copy()
-    fecha_madrugada = datetime(2026, 3, 15, 2, 0, 0)  # 2:00 AM
-    datos_de_falla["fecha_visita"] = fecha_madrugada.isoformat()
-    
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-
-def test_comprar_entradas_horario_exacto_antes_cierre_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario exacto antes de cierre (18:59:59) debe pasar"""
-    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
-        datos_horario_valido = datos_compra_validos.copy()
-        fecha_antes_cierre = datetime(2026, 3, 15, 18, 59, 59)  # Justo antes del cierre
-        datos_horario_valido["fecha_visita"] = fecha_antes_cierre.isoformat()
-        
-        # Mockear dependencias externas
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
-        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
-        
-        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
-
-def test_comprar_entradas_horario_exacto_cierre_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario exacto de cierre (19:00) debe fallar"""
-    datos_de_falla = datos_compra_validos.copy()
-    fecha_cierre = datetime(2026, 3, 15, 19, 0, 0)  # 7:00 PM exacto
-    datos_de_falla["fecha_visita"] = fecha_cierre.isoformat()
-    
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-
-def test_comprar_entradas_horario_medio_dia_pasa(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: comprar con horario de medio día (12:00) debe pasar"""
-    with pytest.raises(AttributeError):  # Porque el método comprar_entradas no está implementado
-        datos_horario_valido = datos_compra_validos.copy()
-        fecha_medio_dia = datetime(2026, 3, 15, 12, 0, 0)  # 12:00 PM
-        datos_horario_valido["fecha_visita"] = fecha_medio_dia.isoformat()
-        
-        # Mockear dependencias externas
-        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
-        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
-        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
-        
-        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_horario_valido)
-
-# --- PRUEBAS RED: Usuario No Registrado ---
-
-def test_comprar_entradas_usuario_no_registrado_falla(servicio_compra, datos_compra_validos):
-    """Prueba RED: usuario no registrado no puede comprar entradas"""
-    usuario_no_registrado = Mock(nombre="Jose Gonzales", email="jose@example.com", esta_registrado=False)
-    
-    with pytest.raises(PermissionError):
-        servicio_compra.comprar_entradas(usuario=usuario_no_registrado, **datos_compra_validos)
-
 # -- PRUEBAS RED: Validaciones de estructura y datos ---
-
-def test_comprar_entradas_cantidad_inconsistente_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    """Prueba RED: cantidad no coincide con visitantes debe fallar"""
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["cantidad"] = 3
-    datos_de_falla["visitantes"] = datos_compra_validos["visitantes"][:2]  # Solo 2 visitantes
-    
-    with pytest.raises(ValueError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
 
 def test_comprar_entradas_edad_negativa_falla(servicio_compra, usuario_valido_mock):
     """Prueba RED: edad negativa debe fallar"""
@@ -744,21 +857,6 @@ def test_comprar_entradas_tipo_pase_null_falla(servicio_compra, usuario_valido_m
     with pytest.raises(ValueError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
 
-
-# --- PRUEBAS RED: Edge Cases de Negocio ---
-
-def test_calcular_precio_edad_cero_gratis(servicio_compra):
-    """Prueba RED: edad 0 años debe ser gratis"""
-    with pytest.raises(AttributeError):
-        precio = servicio_compra._calcular_precio_entrada(0, "VIP")
-        assert precio == 0
-
-def test_calcular_precio_edad_un_ano_gratis(servicio_compra):
-    """Prueba RED: edad 1 año debe ser gratis"""
-    with pytest.raises(AttributeError):
-        precio = servicio_compra._calcular_precio_entrada(1, "Regular")
-        assert precio == 0
-
 # --- PRUEBAS RED: Validación de Formato Email ---
 
 def test_comprar_entradas_email_usuario_invalido_falla(servicio_compra, datos_compra_validos):
@@ -775,101 +873,14 @@ def test_comprar_entradas_email_usuario_vacio_falla(servicio_compra, datos_compr
     with pytest.raises(ValueError):
         servicio_compra.comprar_entradas(usuario=usuario_email_vacio, **datos_compra_validos)
 
+# --- PRUEBAS RED: Proceso de Compra Completo ----------------------------------------------
 
-# Los siguientes tests creo q están mal porque están probando comprar_entradas, no _validar_fecha_hora_visita, _validad_cantidad, etc. Los implementé correctamente. De todas formas, los dejo comentados por si me equivoco. 
-#                                                                       Mari.
-"""
-def test_comprar_mas_de_diez_entradas_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    #Prueba RED: comprar más de 10 entradas debe fallar.
-    datos_de_falla = datos_compra_validos.copy()
-    cantidad_a_fallar = 11
-    datos_de_falla["cantidad"] = cantidad_a_fallar
-    visitante_base = datos_de_falla["visitantes"][0]
-    datos_de_falla["visitantes"] = [visitante_base] * cantidad_a_fallar
-
-    with pytest.raises(LimiteEntradasExcedidoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-
-def test_comprar_entradas_fecha_pasada_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    #Prueba RED: comprar con fecha pasada debe fallar.
-    fecha_pasada = date.today() - timedelta(days=1)
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["fecha_visita"] = fecha_pasada.isoformat()
-
-    with pytest.raises(FechaInvalidaError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-
-def test_comprar_entradas_fecha_lunes_falla(servicio_compra, datos_compra_validos, usuario_valido_mock):
-    #Prueba RED: comprar para un lunes debe fallar (parque cerrado).
-    hoy = date.today()
-    dias_hasta_lunes = (0 - hoy.weekday() + 7) % 7
-    if dias_hasta_lunes == 0: 
-        dias_hasta_lunes = 7
-    fecha_lunes = hoy + timedelta(days=dias_hasta_lunes)
-
-    datos_de_falla = datos_compra_validos.copy()
-    datos_de_falla["fecha_visita"] = fecha_lunes.isoformat()
-
-    with pytest.raises(ParqueCerradoError):
-        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
-"""
-
-# --- PRUEBAS (estas parecen estar en fase GREEN, las mantengo pero comento) ---
-"""
-def test_validar_parametros_cantidad_valida_no_lanza_error(sistema):
-    # Prueba que la validación pasa con una cantidad correcta.
-    sistema.validar_parametros_compra(cantidad=5)
-
-def test_procesar_pago_compra_exitoso(sistema, mocker):
-    # Prueba que el cálculo del monto y la llamada de pago son correctos.
-    mocker.patch.object(sistema.mp_service, 'procesar_pago', return_value=True)
-    pago_exitoso, monto = sistema.procesar_pago_compra(cantidad=3, tipo_pase={"nombre": "VIP", "precio": 10000})
-    
-    assert pago_exitoso is True
-    assert monto == 30000
-
-def test_crear_objeto_compra(sistema):
-    # Prueba que el objeto Compra se instancia con los datos correctos.
-    datos = {
-        "fecha_visita": date.today(), "cantidad_entradas": 2, "edades_visitantes": [30, 35],
-        "tipo_pase": {"nombre": "VIP", "precio": 10000}, "forma_pago": "tarjeta", "usuario": {"mail": "test@test.com"}
-    }
-    
-    compra_creada = sistema.crear_objeto_compra(datos, monto_total=20000)
-    
-    assert isinstance(compra_creada, Compra)
-    assert compra_creada.cantidad_entradas == 2
-    assert compra_creada.monto_total == 20000
-    assert compra_creada.usuario["mail"] == "test@test.com"
-
-def test_comprar_entradas_con_datos_validos_y_pago_tarjeta(sistema, mocker):
-    # Prueba el flujo completo del método 'comprar_entradas'
-    mock_procesar_pago = mocker.patch.object(sistema.mp_service, 'procesar_pago', return_value=True)
-    mock_enviar_email = mocker.patch.object(sistema.email_service, 'enviar_confirmacion', return_value=True)
-    
-    usuario_valido = {"nombre": "Ana", "apellido": "López", "mail": "analopez@gmail.com"}
-    fecha_valida = date.today() + timedelta(days=1)
-    tipo_pase_valido = {"nombre": "VIP", "precio": 10000}
-    forma_pago_valida = "tarjeta"
-
-    compra, confirmacion = sistema.comprar_entradas(
-        fecha_visita=fecha_valida,
-        cantidad_entradas=2,
-        edades_visitantes=[24, 22],
-        tipo_pase=tipo_pase_valido,
-        forma_pago=forma_pago_valida,
-        usuario=usuario_valido
-    )
-
-    assert isinstance(compra, Compra)
-    assert compra.fecha_visita == fecha_valida
-    assert len(compra.entradas) == 2
-    assert compra.forma_pago == "tarjeta"
-    assert compra.usuario["mail"] == 'analopez@gmail.com'
-    assert confirmacion is True
-    mock_procesar_pago.assert_called_once_with(monto=20000)
-    mock_enviar_email.assert_called_once_with(
-        mail='analopez@gmail.com',
-        compra_details=compra.__dict__
-    )
-"""
+def test_comprar_entradas_proceso_completo_exitoso(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: proceso completo de compra exitoso"""
+    with pytest.raises(AttributeError):
+        # Mockear todas las dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_compra_validos)
