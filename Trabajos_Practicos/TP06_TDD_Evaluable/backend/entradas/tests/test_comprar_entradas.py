@@ -564,7 +564,7 @@ def test_validar_formato_pases_falla_con_tipo_incorrecto_falla(servicio_compra):
 
 def test_validar_valor_pase_invalido_falla(servicio_compra):
     """
-    Prueba UNITARIA: Falla si un 'tipo_pase' es un string válido
+    Falla si un 'tipo_pase' es un string válido
     pero no corresponde a un tipo de pase existente (ej. 'Premium').
     """
     visitantes_con_pase_invalido = [
@@ -719,97 +719,97 @@ def test_validar_cantidad_limite_exacto_10_pasa(servicio_compra):
 # --- PRUEBAS UNITARIAS: CÁLCULO DE PRECIOS Y MONTOS ---
 
 def test_calcular_precio_menor_3_anos_regular(servicio_compra):
-    """Prueba RED: menores de 3 con pase Regular entran gratis."""
+    """Menores de 3 con pase Regular entran gratis."""
     precio = servicio_compra._calcular_precio_entrada(1, "Regular")
     assert precio == 0
 
 
 def test_calcular_precio_menor_3_anos_vip(servicio_compra):
-    """Prueba RED: menores de 3 con pase VIP entran gratis ($0)."""
+    """Menores de 3 con pase VIP entran gratis ($0)."""
     precio = servicio_compra._calcular_precio_entrada(1, "VIP")
     assert precio == 0
 
 
 def test_calcular_precio_menor_10_anos_regular(servicio_compra):
-    """Prueba RED: menores de 10 con pase Regular pagan mitad"""
+    """Menores de 10 con pase Regular pagan mitad"""
     precio = servicio_compra._calcular_precio_entrada(8, "Regular")
     assert precio == 2500  # 5000 / 2
 
 
 def test_calcular_precio_menor_10_anos_vip(servicio_compra):
-    """Prueba RED: menores de 10 con pase VIP pagan mitad"""
+    """Menores de 10 con pase VIP pagan mitad"""
     precio = servicio_compra._calcular_precio_entrada(8, "VIP")
     assert precio == 5000  # 10000 / 2
 
 
 def test_calcular_precio_mayor_60_anos_regular(servicio_compra):
-    """Prueba RED: mayores de 60 con pase Regular pagan mitad"""
+    """Mayores de 60 con pase Regular pagan mitad"""
     precio = servicio_compra._calcular_precio_entrada(65, "Regular")
     assert precio == 2500  # 5000 / 2
 
 
 def test_calcular_precio_mayor_60_anos_vip(servicio_compra):
-    """Prueba RED: mayores de 60 con pase VIP pagan mitad"""
+    """Mayores de 60 con pase VIP pagan mitad"""
     precio = servicio_compra._calcular_precio_entrada(65, "VIP")
     assert precio == 5000  # 10000 / 2
 
 
 def test_calcular_precio_adulto_regular(servicio_compra):
-    """Prueba RED: adultos (10-60) con pase Regular pagan precio completo"""
+    """Adultos (10-60) con pase Regular pagan precio completo"""
     precio = servicio_compra._calcular_precio_entrada(30, "Regular")
     assert precio == 5000
 
 
 def test_calcular_precio_adulto_vip(servicio_compra):
-    """Prueba RED: adultos (10-60) con pase VIP pagan precio completo"""
+    """Adultos (10-60) con pase VIP pagan precio completo"""
     precio = servicio_compra._calcular_precio_entrada(30, "VIP")
     assert precio == 10000
 
 
 def test_calcular_precio_edad_limite_inferior_menores_3(servicio_compra):
-    """Prueba RED: 0 años (límite inferior) con pase Regular entra gratis ($0)."""
+    """0 años (límite inferior) con pase Regular entra gratis ($0)."""
     precio = servicio_compra._calcular_precio_entrada(0, "Regular")
     assert precio == 0
 
 
 def test_calcular_precio_edad_limite_superior_menores_3(servicio_compra):
-    """Prueba RED: 2 años (límite superior) con pase Regular entra gratis ($0)."""
+    """2 años (límite superior) con pase Regular entra gratis ($0)."""
     precio = servicio_compra._calcular_precio_entrada(2, "Regular")
     assert precio == 0
 
 
 def test_calcular_precio_edad_limite_inferior_menores_10(servicio_compra):
-    """Prueba RED: 3 años (límite inferior) paga la mitad."""
+    """3 años (límite inferior) paga la mitad."""
     precio = servicio_compra._calcular_precio_entrada(3, "Regular")
     assert precio == 2500  # Mitad por ser menor de 10
 
 
 def test_calcular_precio_edad_limite_superior_menores_10(servicio_compra):
-    """Prueba RED: 9 años (límite superior) paga la mitad."""
+    """9 años (límite superior) paga la mitad."""
     precio = servicio_compra._calcular_precio_entrada(9, "Regular")
     assert precio == 2500
 
 
 def test_calcular_precio_edad_limite_inferior_adulto(servicio_compra):
-    """Prueba RED: 10 años (límite inferior) paga el total."""
+    """10 años (límite inferior) paga el total."""
     precio = servicio_compra._calcular_precio_entrada(10, "Regular")
     assert precio == 5000
 
 
 def test_calcular_precio_edad_limite_superior_adulto(servicio_compra):
-    """Prueba RED: 60 años (límite superior) paga el total."""
+    """60 años (límite superior) paga el total."""
     precio = servicio_compra._calcular_precio_entrada(60, "VIP")
     assert precio == 10000
 
 
 def test_calcular_precio_edad_limite_inferior_tercera_edad(servicio_compra):
-    """Prueba RED: 61 años (límite inferior) paga la mitad."""
+    """61 años (límite inferior) paga la mitad."""
     precio = servicio_compra._calcular_precio_entrada(61, "VIP")
     assert precio == 5000
 
 
 def test_calcular_monto_total_un_solo_visitante(servicio_compra):
-    """Prueba RED: el monto total para un solo adulto regular es $5000."""
+    """El monto total para un solo adulto regular es $5000."""
     visitantes = [
         {"edad": 30, "tipo_pase": "Regular"}
     ]
@@ -818,7 +818,7 @@ def test_calcular_monto_total_un_solo_visitante(servicio_compra):
 
 
 def test_calcular_monto_total_todos_adultos(servicio_compra):
-    """Prueba RED: todos adultos - monto completo"""
+    """Todos adultos - monto completo"""
     visitantes = [
             {"edad": 25, "tipo_pase": "Regular"},  # 5000
             {"edad": 30, "tipo_pase": "VIP"}  # 10000
@@ -828,7 +828,7 @@ def test_calcular_monto_total_todos_adultos(servicio_compra):
 
 
 def test_calcular_monto_total_mixto(servicio_compra):
-    """Prueba RED: cálculo de monto con diferentes edades"""
+    """Cálculo de monto con diferentes edades"""
     visitantes = [
             {"edad": 2, "tipo_pase": "Regular"},  # 0
             {"edad": 8, "tipo_pase": "Regular"},  # 2500
@@ -840,7 +840,7 @@ def test_calcular_monto_total_mixto(servicio_compra):
 
 
 def test_calcular_monto_total_todos_menores_3_mixto(servicio_compra):
-    """Prueba RED: todos menores de 3 años con distintos tipos de pase - Monto $0."""
+    """Todos menores de 3 años con distintos tipos de pase - Monto $0."""
     visitantes = [
             {"edad": 1, "tipo_pase": "Regular"},
             {"edad": 2, "tipo_pase": "VIP"}
@@ -850,7 +850,7 @@ def test_calcular_monto_total_todos_menores_3_mixto(servicio_compra):
 
 
 def test_calcular_monto_total_todos_menores_3_vip(servicio_compra):
-    """Prueba RED: todos menores de 3 años con pases VIP - Monto $0."""
+    """Todos menores de 3 años con pases VIP - Monto $0."""
     visitantes = [
         {"edad": 1, "tipo_pase": "VIP"},
         {"edad": 2, "tipo_pase": "VIP"}
@@ -860,7 +860,7 @@ def test_calcular_monto_total_todos_menores_3_vip(servicio_compra):
 
 
 def test_calcular_monto_total_varios_menores(servicio_compra):
-    """Prueba RED: múltiples menores (<3 y <10) con diferentes pases"""
+    """Múltiples menores (<3 y <10) con diferentes pases"""
     visitantes = [
             {"edad": 2, "tipo_pase": "Regular"},  # 0 (menor a 3 = 0)
             {"edad": 5, "tipo_pase": "Regular"},  # 2500 (50% de 5000)
@@ -871,7 +871,7 @@ def test_calcular_monto_total_varios_menores(servicio_compra):
 
 
 def test_calcular_monto_total_todos_mayores_60_regular(servicio_compra):
-    """Prueba RED: todos mayores de 60 con pases Regular - Monto mitad precio completo."""
+    """Todos mayores de 60 con pases Regular - Monto mitad precio completo."""
     visitantes = [
         {"edad": 65, "tipo_pase": "Regular"},
         {"edad": 80, "tipo_pase": "Regular"}
@@ -881,7 +881,7 @@ def test_calcular_monto_total_todos_mayores_60_regular(servicio_compra):
 
 
 def test_calcular_monto_total_solo_regular(servicio_compra):
-    """Prueba RED: grupo donde todos eligen Regular"""
+    """Grupo donde todos eligen Regular"""
     visitantes = [
             {"edad": 5, "tipo_pase": "Regular"},  # 2500
             {"edad": 30, "tipo_pase": "Regular"},  # 5000
@@ -892,7 +892,7 @@ def test_calcular_monto_total_solo_regular(servicio_compra):
 
 
 def test_calcular_monto_total_limites_edad(servicio_compra):
-    """ Prueba RED: cada límite superior e inferior de las categorías de edad."""
+    """Cada límite superior e inferior de las categorías de edad."""
     visitantes = [
         {"edad": 0, "tipo_pase": "Regular"},  # Límite inferior Infante        -> $0
         {"edad": 2, "tipo_pase": "VIP"},  # Límite superior Infante        -> $0
@@ -907,7 +907,7 @@ def test_calcular_monto_total_limites_edad(servicio_compra):
 
 
 def test_calcular_monto_total_mezcla_extrema(servicio_compra):
-    """Prueba RED: mezcla extrema de edades y tipos de pase"""
+    """Mezcla extrema de edades y tipos de pase"""
     visitantes = [
             {"edad": 1, "tipo_pase": "VIP"},  # 0
             {"edad": 2, "tipo_pase": "Regular"},  # 0
@@ -921,7 +921,7 @@ def test_calcular_monto_total_mezcla_extrema(servicio_compra):
 
 
 def test_calcular_monto_total_familia_mixta(servicio_compra):
-    """Prueba RED: familia con diferentes edades y tipos de pase"""
+    """Familia con diferentes edades y tipos de pase"""
     visitantes = [
             {"edad": 2, "tipo_pase": "VIP"},  # 0 (menor 3)
             {"edad": 5, "tipo_pase": "VIP"},  # 5000 (menor 10)
@@ -936,7 +936,7 @@ def test_calcular_monto_total_familia_mixta(servicio_compra):
 
 
 def test_calcular_monto_total_grupo_jovenes_mixto(servicio_compra):
-    """Prueba RED: grupo de jóvenes con mezcla VIP/Regular"""
+    """Grupo de jóvenes con mezcla VIP/Regular"""
     visitantes = [
             {"edad": 20, "tipo_pase": "VIP"},  # 10000
             {"edad": 22, "tipo_pase": "Regular"},  # 5000
@@ -948,7 +948,7 @@ def test_calcular_monto_total_grupo_jovenes_mixto(servicio_compra):
 
 
 def test_calcular_monto_total_tercera_edad_mixta(servicio_compra):
-    """Prueba RED: grupo tercera edad con mezcla VIP/Regular"""
+    """Grupo tercera edad con mezcla VIP/Regular"""
     visitantes = [
             {"edad": 65, "tipo_pase": "VIP"},  # 5000
             {"edad": 68, "tipo_pase": "Regular"},  # 2500
@@ -960,7 +960,7 @@ def test_calcular_monto_total_tercera_edad_mixta(servicio_compra):
 
 
 def test_calcular_monto_total_familia_numerosa_mixta(servicio_compra):
-    """Prueba RED: familia numerosa con múltiples combinaciones"""
+    """Familia numerosa con múltiples combinaciones"""
     visitantes = [
             {"edad": 1, "tipo_pase": "Regular"},  # 0
             {"edad": 4, "tipo_pase": "VIP"},  # 5000
@@ -978,7 +978,7 @@ def test_calcular_monto_total_familia_numerosa_mixta(servicio_compra):
 
 
 def test_calcular_monto_total_solo_vip(servicio_compra):
-    """Prueba RED: grupo donde todos eligen VIP"""
+    """Grupo donde todos eligen VIP"""
     visitantes = [
             {"edad": 5, "tipo_pase": "VIP"},  # 5000
             {"edad": 30, "tipo_pase": "VIP"},  # 10000
@@ -990,20 +990,20 @@ def test_calcular_monto_total_solo_vip(servicio_compra):
 # --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMA DE PAGO ---
 
 def test_gestionar_pago_falla_sin_forma_pago_falla(servicio_compra):
-    """Prueba: Falla si tipo_pago es None."""
+    """Falla si tipo_pago es None."""
     monto_ejemplo = 15000.00
     with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
         servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=None)
 
 def test_gestionar_pago_falla_forma_pago_invalida_falla(servicio_compra):
-    """Prueba: Falla si tipo_pago es un string no reconocido."""
+    """Falla si tipo_pago es un string no reconocido."""
     monto_ejemplo = 15000.00
     tipo_invalido = "Cheque"
     with pytest.raises(ValueError, match=f"Forma de pago inválida: '{tipo_invalido}' no reconocido"):
         servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_invalido)
 
 def test_gestionar_pago_forma_pago_efectivo_pasa(servicio_compra):
-    """Prueba: Con 'Efectivo', retorna True y NO llama a la pasarela."""
+    """Con 'Efectivo', retorna True y NO llama a la pasarela."""
     monto_ejemplo = 10000.00
     tipo_pago = "Efectivo"
 
@@ -1013,7 +1013,7 @@ def test_gestionar_pago_forma_pago_efectivo_pasa(servicio_compra):
     servicio_compra.pasarela_pagos.procesar_pago.assert_not_called()
 
 def test_gestionar_pago_forma_pago_tarjeta_pasa(servicio_compra):
-    """Prueba: Con 'Tarjeta', llama a pasarela y retorna True si el pago es OK."""
+    """Con 'Tarjeta', llama a pasarela y retorna True si el pago es OK."""
     monto_ejemplo = 20000.00
     tipo_pago = "Tarjeta"
     servicio_compra.pasarela_pagos.procesar_pago.return_value = True
@@ -1024,7 +1024,7 @@ def test_gestionar_pago_forma_pago_tarjeta_pasa(servicio_compra):
     servicio_compra.pasarela_pagos.procesar_pago.assert_called_once_with(monto=monto_ejemplo)
 
 def test_gestionar_pago_forma_pago_tarjeta_rechazada_falla(servicio_compra):
-    """Prueba: Con 'Tarjeta', lanza PagoRechazadoError si la pasarela falla."""
+    """Con 'Tarjeta', lanza PagoRechazadoError si la pasarela falla."""
     monto_ejemplo = 5000.00
     tipo_pago = "Tarjeta"
     servicio_compra.pasarela_pagos.procesar_pago.return_value = False
@@ -1152,7 +1152,7 @@ def test_validar_formato_usuario_email_vacio_falla(servicio_compra):
         servicio_compra._validar_formato_usuario(usuario_invalido)
 
 def test_validar_formato_usuario_tipo_incorrecto_falla(servicio_compra):
-    """Prueba UNITARIA: Falla si 'esta_registrado' no es booleano."""
+    """Falla si 'esta_registrado' no es booleano."""
     usuario_invalido = Mock(nombre="Test", email="test@test.com", esta_registrado="True") 
     with pytest.raises(ValueError, match="El atributo 'esta_registrado' debe ser de tipo bool"):
         servicio_compra._validar_formato_usuario(usuario_invalido)    
