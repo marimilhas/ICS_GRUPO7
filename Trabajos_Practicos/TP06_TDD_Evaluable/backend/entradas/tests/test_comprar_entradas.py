@@ -3,13 +3,17 @@ import datetime
 from datetime import datetime, date
 from datetime import timedelta
 from unittest.mock import MagicMock, Mock
+from django.contrib.auth.models import User
 
-# Importar las clases y excepciones (asumiendo que existen en el modelo)
-#from src.models import *
-#from src.exceptions import *
-#from src.servicio_compra import ServicioCompraEntradas
-
-from ..excepciones import *
+from ..excepciones import (
+    LimiteEntradasExcedidoError,
+    ParqueCerradoError,
+    FechaInvalidaError,
+    EdadInvalidaError,
+    PagoRechazadoError,
+    PermissionError,
+    TipoPaseInvalidoError
+)
 from ..models import Compra
 from ..servicio_compra import ServicioCompraEntradas
 from ..repositories import PaseRepository # Necesitas esta importación
@@ -155,15 +159,25 @@ def fecha_futura_valida():
         fecha += timedelta(days=1)
     return fecha.replace(hour=14, minute=0, second=0, microsecond=0)
 
+@pytest.fixture
+def usuario():
+    user = User.objects.create_user(username="juanperez", email="juan@example.com")
+    # Agregamos atributos que tu servicio espera
+    user.nombre = "Juan Perez"
+    user.esta_registrado = True
+    return user
+
+
 
 # ====================================================================
 # PRUEBAS DE INTEGRACIÓN
 # ====================================================================
 
+@pytest.mark.django_db
 def test_comprar_entradas_flujo_completo_tarjeta_exitoso(
     servicio_compra,
     datos_compra_validos,
-    usuario_valido_mock
+    usuario
 ):
     """
     Simula la PRUEBA DE USUARIO #1 (compra exitosa con tarjeta).
@@ -176,7 +190,7 @@ def test_comprar_entradas_flujo_completo_tarjeta_exitoso(
     monto_esperado = 32500.00 # Calculado para datos_compra_validos
 
     compra_resultado, confirmacion = servicio_compra.comprar_entradas(
-        usuario=usuario_valido_mock,
+        usuario=usuario,
         **datos_compra_validos
     )
 
@@ -185,7 +199,7 @@ def test_comprar_entradas_flujo_completo_tarjeta_exitoso(
     mock_pasarela.procesar_pago.assert_called_once_with(monto=monto_esperado)
     mock_correo.enviar_confirmacion.assert_called_once()
     _, kwargs_email = mock_correo.enviar_confirmacion.call_args
-    assert kwargs_email.get('mail') == usuario_valido_mock.email
+    assert kwargs_email.get('mail') == usuario.email
 
 def test_comprar_entradas_sin_forma_pago_falla(
     servicio_compra,
@@ -258,10 +272,11 @@ def test_comprar_entradas_cantidad_mayor_a_10_falla(
     servicio_compra.pasarela_pagos.procesar_pago.assert_not_called()
     servicio_compra.servicio_correo.enviar_confirmacion.assert_not_called()
 
+@pytest.mark.django_db
 def test_comprar_entradas_flujo_efectivo_exitoso(
     servicio_compra,
     datos_compra_validos,
-    usuario_valido_mock
+    usuario
 ):
     """
     Verifica flujo completo exitoso con pago 'Efectivo'.
@@ -274,7 +289,7 @@ def test_comprar_entradas_flujo_efectivo_exitoso(
     mock_correo.enviar_confirmacion.return_value = True
 
     compra_resultado, confirmacion = servicio_compra.comprar_entradas(
-        usuario=usuario_valido_mock,
+        usuario=usuario,
         **datos_efectivo
     )
 
@@ -307,10 +322,11 @@ def test_comprar_entradas_pago_tarjeta_rechazado_falla(
     mock_pasarela.procesar_pago.assert_called_once() 
     mock_correo.enviar_confirmacion.assert_not_called() 
 
+@pytest.mark.django_db
 def test_comprar_entradas_falla_envio_email(
     servicio_compra,
     datos_compra_validos,
-    usuario_valido_mock
+    usuario
 ):
     """
     Verifica comportamiento si el pago es OK pero el email falla.
@@ -323,7 +339,7 @@ def test_comprar_entradas_falla_envio_email(
     mock_correo.enviar_confirmacion.return_value = False 
 
     compra_resultado, confirmacion = servicio_compra.comprar_entradas(
-        usuario=usuario_valido_mock,
+        usuario=usuario,
         **datos_tarjeta
     )
 
