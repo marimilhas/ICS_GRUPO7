@@ -31,7 +31,7 @@ class Compra(models.Model):
     )
 
     fecha_compra = models.DateTimeField(default=timezone.now, help_text="Fecha y hora en que se registró la compra")
-    fecha_visita = models.DateField(help_text="Fecha elegida por el visitante para ir al parque")
+    fecha_visita = models.DateTimeField(help_text="Fecha y hora elegida por el visitante para ir al parque")
     monto_total = models.DecimalField(max_digits=10, decimal_places=2, help_text="Costo total calculado de todas las entradas")
     forma_pago = models.CharField(max_length=3, choices=FormasPago.choices, help_text="Método de pago seleccionado")
     estado_pago = models.CharField(max_length=3, choices=EstadosPago.choices, default=EstadosPago.PENDIENTE, help_text="Estado actual del pago")

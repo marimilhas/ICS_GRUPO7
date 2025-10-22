@@ -82,17 +82,16 @@ class ServicioCompraEntradas:
         Valida que la fecha sea en un dia donde el parque esté abierto (ni lunes, ni feriados como navidad o año nuevo),
         que se compre durante horario habilitado
         """
-        #Creamos las fechas y horas necesarias para comparacion
+        if fecha < datetime.now():
+            raise FechaInvalidaError("La fecha es pasada")
+
         dia_fecha = fecha.weekday()
-        navidad = datetime(fecha.year, month=12, day=25) + timedelta(hours=fecha.hour, minutes=fecha.minute, seconds=fecha.second)
-        anio_nuevo = datetime(fecha.year, month=1, day=1) + timedelta(hours=fecha.hour, minutes=fecha.minute, seconds=fecha.second)
+        navidad = datetime(fecha.year, 12, 25, fecha.hour, fecha.minute, fecha.second)
+        anio_nuevo = datetime(fecha.year, 1, 1, fecha.hour, fecha.minute, fecha.second)
         hora_fecha = fecha.hour
 
         if fecha == navidad or fecha == anio_nuevo or dia_fecha == 0 or hora_fecha < 9 or hora_fecha >= 19:
-            raise ParqueCerradoError
-
-        if fecha < datetime.now():
-            raise FechaInvalidaError
+            raise ParqueCerradoError("El parque está cerrado")
 
     def _validar_valores_pases(self, visitantes: list):
         """
