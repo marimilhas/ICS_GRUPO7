@@ -28,16 +28,34 @@ class ServicioCompraEntradas:
         # La forma más limpia para un método no implementado en el flujo principal:
         raise NotImplementedError("Método comprar_entradas aún no implementado (Fase RED).")
 
-    # 2. Métodos de Cálculo (Deben fallar para los tests de precio/monto)
     def _calcular_precio_entrada(self, edad: int, tipo_pase: str) -> float:
         """Calculará el precio de una entrada según edad y tipo de pase."""
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+
+        costo = 0
+
+        #Asigna según tipo de entrada
+        if tipo_pase == 'Regular':
+            costo = 5000
+        elif tipo_pase == 'VIP':
+            costo = 10000
+
+        #Modifica segun edad
+        if edad < 3:
+            costo = 0
+        elif edad < 10 or edad > 60:
+            costo *= 0.5
+        
+        return costo
 
     def _calcular_monto_total(self, visitantes: list) -> float:
         """Calculará el monto total sumando todos los precios individuales."""
-        # Nota: Este método ya tiene un NotImplementedError en el código que devolviste.
-        # Si se deja así, todos los tests de cálculo fallarán con este error.
-        raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+        
+        suma = 0
+
+        for visitante in visitantes:
+            suma += self._calcular_precio_entrada(visitante["edad"], visitante["tipo_pase"])
+
+        return suma
 
     # 3. Métodos de Validación (Deben fallar con NotImplementedError)
 
