@@ -269,6 +269,106 @@ def test_comprar_entradas_cantidad_inconsistente_falla(servicio_compra, datos_co
     with pytest.raises(ValueError):
         servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_de_falla)
 
+def test_comprar_entradas_edad_negativa_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: edad negativa debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": -5, "tipo_pase": "Regular"}]
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_edad_muy_alta_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: edad muy alta (mayor a 150) debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 200, "tipo_pase": "Regular"}]
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_tipo_pase_invalido_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: tipo de pase inválido debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 25, "tipo_pase": "Premium"}]  # Tipo inválido
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_edad_string_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: edad como string debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": "veinticinco", "tipo_pase": "Regular"}]  # Edad como string
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_tipo_pase_null_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: tipo pase null debe fallar"""
+    datos_invalidos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 25, "tipo_pase": None}]
+    }
+        
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_invalidos)
+
+def test_comprar_entradas_datos_visitante_incompletos_falla(servicio_compra, usuario_valido_mock):
+    """Prueba RED: datos de visitante incompletos debe fallar"""
+    datos_incompletos = {
+        "cantidad": 1,
+        "fecha_visita": date.today().isoformat(),
+        "tipo_pago": "Tarjeta",
+        "visitantes": [{"edad": 25}]  # Falta tipo_pase
+    }
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_incompletos)
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE EMAIL ---
+
+def test_comprar_entradas_email_usuario_invalido_falla(servicio_compra, datos_compra_validos):
+    """Prueba RED: email de usuario inválido debe fallar"""
+    usuario_email_invalido = Mock(esta_registrado=True, email="email_invalido")
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_email_invalido, **datos_compra_validos)
+
+def test_comprar_entradas_email_usuario_vacio_falla(servicio_compra, datos_compra_validos):
+    """Prueba RED: email de usuario vacío debe fallar"""
+    usuario_email_vacio = Mock(esta_registrado=True, email="")
+    
+    with pytest.raises(ValueError):
+        servicio_compra.comprar_entradas(usuario=usuario_email_vacio, **datos_compra_validos)
+
+# --- PRUEBAS RED: Proceso de Compra Completo ----------------------------------------------
+
+def test_comprar_entradas_proceso_completo_exitoso(servicio_compra, datos_compra_validos, usuario_valido_mock):
+    """Prueba RED: proceso completo de compra exitoso"""
+    with pytest.raises(AttributeError):
+        # Mockear todas las dependencias externas
+        servicio_compra.pasarela_pagos.procesar_pago = MagicMock(return_value=True)
+        servicio_compra.servicio_correo.enviar_confirmacion = MagicMock(return_value=True)
+        servicio_compra.servicio_calendario.es_dia_abierto.return_value = True
+        
+        compra = servicio_compra.comprar_entradas(usuario=usuario_valido_mock, **datos_compra_validos)
+
 # Esto no lo comenté yo, pero lo dejo acá igual.
 
 # --- PRUEBAS (estas parecen estar en fase GREEN, las mantengo pero comento) ---
