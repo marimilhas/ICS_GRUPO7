@@ -1,11 +1,13 @@
 # servicio_compra.py
 
 from django.contrib.auth.models import User
-from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError, FechaInvalidaError, PermissionError
+from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError, \
+    FechaInvalidaError, PermissionError
 from datetime import datetime, timedelta
 
 from .repositories import PaseRepository
-from .models import Compra
+from .estrategias_pago import PagoEfectivoStrategy, PagoTarjetaStrategy, IEstrategiaPago
+from .models import Compra, Entrada
 
 
 # Asegúrate de que las excepciones necesarias están definidas en excepciones.py
@@ -20,70 +22,116 @@ class ServicioCompraEntradas:
         self.servicio_calendario = servicio_calendario
         self.pase_repository = pase_repository  # <-- Nueva dependencia inyectada
 
-    def comprar_entradas(self, usuario: User, cantidad: int, fecha_visita: str, tipo_pago: str = None, visitantes: list = []):
-        """Método principal que orquesta la compra."""
-
+    # 1. Método Principal (Debe fallar para los tests de integración)
+    def comprar_entradas(self, usuario: User, cantidad: int, fecha_visita: str, visitantes: list,
+                         tipo_pago: str = None):
+        """
+        Método principal que orquesta la compra.
+        Debe fallar en la Fase RED.
+        """
+        # 1. Validaciones de Formato y Lógica
+        # Las validaciones de usuario, cantidad, fechas, edad, y pases (valores)
+        # deben ejecutarse en este orden para fallar rápido.
         self._validar_formato_usuario(usuario)
         self._validar_usuario(usuario)
         self._validar_formato_cantidad(cantidad)
         self._validar_cantidad(cantidad, visitantes)
+
+        fecha_dt = self._validar_formato_fecha(fecha_visita)
+
+        self._validar_fecha_hora_visita(fecha_dt)
+
         self._validar_formato_edades(visitantes)
         self._validar_formato_pases(visitantes)
         self._validar_valores_pases(visitantes)
 
-        fecha_obj = self._validar_formato_fecha(fecha_visita)
-        self._validar_fecha_hora_visita(fecha_obj)
-
-        #Calcular monto
+        # 2. Cálculo del Monto
         monto_total = self._calcular_monto_total(visitantes)
 
-        #Procesar pago
-        self._gestionar_pago(monto_total, tipo_pago)
+        # 3. Gestión del Pago (Patrón Strategy)
+        # Lanza PagoRechazadoError si el pago con tarjeta falla
+        estado_compra = self._gestionar_pago(monto_total, tipo_pago)
 
-        #Mapeo para coicidir con el modelo compra
-        if tipo_pago.lower() == "efectivo":
-            forma_pago_db = Compra.FormasPago.EFECTIVO
-        elif tipo_pago.lower() == "tarjeta":
-            forma_pago_db = Compra.FormasPago.TARJETA
-        else:
-            raise ValueError("Tipo de pago desconocido")
-        
-        # Creamos la compra
+        # 4. Creación y Persistencia de la Compra
+        # Persistencia directa al ORM de Django (sin CompraRepository dedicado)
         compra = Compra.objects.create(
             usuario=usuario,
-            fecha_visita=fecha_obj,
+            fecha_visita=fecha_dt,
             monto_total=monto_total,
-            forma_pago=forma_pago_db,
-            estado_pago=Compra.EstadosPago.PENDIENTE
+            forma_pago=tipo_pago,
+            estado_pago=estado_compra,
         )
 
-        #Envio de mail
-        email_enviado = self._enviar_confirmacion(usuario, compra)
+        # 5. Creación de Entradas y Persistencia (Necesita el Pase para FK)
+        tipos_requeridos = list(set([v["tipo_pase"] for v in visitantes]))
+        # DELEGACIÓN: El Repositorio maneja la consulta eficiente y el mapeo
+        pase_map = self.pase_repository.obtener_pases_como_diccionario(tipos_requeridos)
 
-        return compra, email_enviado
+        entradas_a_crear = []
+        for visitante in visitantes:
+            precio_final = self._calcular_precio_entrada(visitante["edad"], visitante["tipo_pase"])
+            pase_obj = pase_map.get(visitante["tipo_pase"])  # <-- Simple consulta al diccionario
+
+            entradas_a_crear.append(Entrada(
+                compra=compra,
+                pase=pase_obj,
+                edad_visitante=visitante["edad"],
+                precio_calculado=precio_final
+            ))
+
+        Entrada.objects.bulk_create(entradas_a_crear)  # Uso eficiente del ORM
+
+        # 6. Notificación
+        confirmacion_email = self._enviar_confirmacion(usuario, compra)
+
+        return entradas_a_crear, confirmacion_email
+
+    def _get_pago_strategy(self, tipo_pago: str) -> IEstrategiaPago:
+        """Determina y retorna la estrategia de pago basada en el tipo."""
+
+        tipo_pago_norm = tipo_pago.strip().capitalize()
+
+        if tipo_pago_norm == "Tarjeta":
+            return PagoTarjetaStrategy()
+        elif tipo_pago_norm == "Efectivo":
+            return PagoEfectivoStrategy()
+        else:
+            # Lanza excepción si el tipo es desconocido (e.g. "Cheque")
+            raise ValueError(f"Forma de pago inválida: '{tipo_pago}' no reconocido")
+
+    def _gestionar_pago(self, monto_total: float, tipo_pago: str) -> str:
+        """
+        Aplica el patrón Strategy para procesar el pago.
+        Retorna el estado de la compra ('Pagada' o 'Pendiente').
+        """
+        # La validación de None/vacío se hace en comprar_entradas.
+        estrategia = self._get_pago_strategy(tipo_pago)
+
+        # pasarela_pagos es el recurso necesario por la estrategia de Tarjeta
+        return estrategia.procesar_pago(monto_total, self.pasarela_pagos)
 
     def _calcular_precio_entrada(self, edad: int, tipo_pase: str) -> float:
         """Calculará el precio de una entrada según edad y tipo de pase."""
 
         costo = 0
 
-        #Asigna según tipo de entrada
+        # Asigna según tipo de entrada
         if tipo_pase == 'Regular':
             costo = 5000
         elif tipo_pase == 'VIP':
             costo = 10000
 
-        #Modifica segun edad
+        # Modifica segun edad
         if edad < 3:
             costo = 0
         elif edad < 10 or edad > 60:
             costo *= 0.5
-        
+
         return costo
 
     def _calcular_monto_total(self, visitantes: list) -> float:
         """Calculará el monto total sumando todos los precios individuales."""
-        
+
         suma = 0
 
         for visitante in visitantes:
@@ -98,34 +146,35 @@ class ServicioCompraEntradas:
         Valida que no se compren más de 10 entradas, que sea una cantidad positiva y que la cantidad coincida con los visitantes
         """
 
-        #Validamos el rango valido
+        # Validamos el rango valido
         if cantidad <= 0:
             raise ValueError("La cantidad de entradas debe ser al menos 1.")
-        
+
         if cantidad > 10:
             raise LimiteEntradasExcedidoError("La cantidad de entradas no puede ser mayor a 10.")
-        
-        #Validamos que coincida con la cantidad de visitantes real         
+
+        # Validamos que coincida con la cantidad de visitantes real
         if cantidad != len(visitantes):
             raise ValueError("La cantidad de entradas debe ser igual al nro de visitantes.")
-        
-        
-        
+
     def _validar_fecha_hora_visita(self, fecha):
         """
         Valida que la fecha sea en un dia donde el parque esté abierto (ni lunes, ni feriados como navidad o año nuevo),
         que se compre durante horario habilitado
         """
-        if fecha < datetime.now():
-            raise FechaInvalidaError("La fecha es pasada")
-
+        # Creamos las fechas y horas necesarias para comparacion
         dia_fecha = fecha.weekday()
-        navidad = datetime(fecha.year, 12, 25, fecha.hour, fecha.minute, fecha.second)
-        anio_nuevo = datetime(fecha.year, 1, 1, fecha.hour, fecha.minute, fecha.second)
+        navidad = datetime(fecha.year, month=12, day=25) + timedelta(hours=fecha.hour, minutes=fecha.minute,
+                                                                     seconds=fecha.second)
+        anio_nuevo = datetime(fecha.year, month=1, day=1) + timedelta(hours=fecha.hour, minutes=fecha.minute,
+                                                                      seconds=fecha.second)
         hora_fecha = fecha.hour
 
+        if fecha < datetime.now():
+            raise FechaInvalidaError
+
         if fecha == navidad or fecha == anio_nuevo or dia_fecha == 0 or hora_fecha < 9 or hora_fecha >= 19:
-            raise ParqueCerradoError("El parque está cerrado")
+            raise ParqueCerradoError
 
     def _validar_valores_pases(self, visitantes: list):
         """
@@ -233,6 +282,18 @@ class ServicioCompraEntradas:
             # Si el bucle termina sin errores, los formatos son válidos.
         return True
 
+    def _validar_formato_tipo_pago(self, tipo_pago: str):
+        """
+        Valida que el tipo de pago sea un string no vacío o None.
+        La validación de VALOR (Tarjeta/Efectivo) la hace _get_pago_strategy.
+        """
+        if tipo_pago is None or (isinstance(tipo_pago, str) and not tipo_pago.strip()):
+            raise ValueError("Forma de pago inválida: No especificada")
+        if not isinstance(tipo_pago, str):
+            # Opcional, pero consistente: asegurar que es texto
+            raise ValueError("La forma de pago debe ser un texto.")
+        return True
+
     def _validar_formato_usuario(self, usuario):
         """
         Valida que el objeto usuario tenga la estructura esperada.
@@ -271,7 +332,7 @@ class ServicioCompraEntradas:
         """
         if not getattr(usuario, "esta_registrado", False):
             raise PermissionError("Usuario no registrado")
-        
+
         return True
 
     def _gestionar_pago(self, monto_total: float, tipo_pago: str) -> bool:
@@ -279,7 +340,7 @@ class ServicioCompraEntradas:
         Procesa el pago (llama a pasarela si es Tarjeta) o lo registra (si es Efectivo).
         """
 
-         # Validar que se haya especificado una forma de pago
+        # Validar que se haya especificado una forma de pago
         if tipo_pago is None:
             raise ValueError("Forma de pago inválida: No especificada")
 
@@ -304,7 +365,6 @@ class ServicioCompraEntradas:
         else:
             # Cualquier otro tipo de pago no reconocido
             raise ValueError(f"Forma de pago inválida: '{tipo_pago}' no reconocido")
-
 
     def _enviar_confirmacion(self, usuario: User, compra):
         """
