@@ -16,7 +16,7 @@ from ..excepciones import (
 )
 from ..models import Compra, Entrada
 from ..servicio_compra import ServicioCompraEntradas
-from ..repositories import PaseRepository  # Necesitas esta importación
+from ..repositories import PaseRepository 
 from ..models import Pase, EstadosPago
 
 
