@@ -1,7 +1,8 @@
 from rest_framework import viewsets
+from django.contrib.auth.models import User
 from entradas.models import Pase, Compra, Entrada
 from .serializers import PaseSerializer, CompraSerializer, EntradaSerializer
-from django.contrib.auth.models import User
+
 
 class PaseViewSet(viewsets.ModelViewSet):
     queryset = Pase.objects.all()

@@ -1,5 +1,5 @@
-from .models import Pase
 from typing import Set, Dict
+from .models import Pase
 
 
 class PaseRepository:
