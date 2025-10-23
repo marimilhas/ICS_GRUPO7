@@ -17,13 +17,19 @@ class CompraViewSet(viewsets.ModelViewSet):
     serializer_class = CompraSerializer
 
     def perform_create(self, serializer):
-        # Lógica para asignar usuario por defecto si no se proporciona
-        if 'usuario' not in serializer.validated_data:
-            # Asume que el usuario con ID 2 existe
-            default_user = User.objects.get(id=2)
-            serializer.save(usuario=default_user)
+        # Usamos el usuario autenticado si existe
+        if self.request.user.is_authenticated:
+            usuario = self.request.user
         else:
-            serializer.save()
+            # 1. Obtener o crear un usuario de simulación (si no hay autenticación)
+            # Esto garantiza que el ID exista
+            usuario, creado = User.objects.get_or_create(
+                username='simulador_compra',
+                defaults={'email': 'simulador@parque.com', 'password': 'simulador_pw'}
+            )
+
+        # 2. Asignar el usuario y guardar
+        serializer.save(usuario=usuario)
 
 class EntradaViewSet(viewsets.ModelViewSet):
     queryset = Entrada.objects.all()

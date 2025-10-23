@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from entradas.api.views import PaseViewSet, CompraViewSet, EntradaViewSet
+from .views import PaseViewSet, CompraViewSet, EntradaViewSet
 
 router = DefaultRouter()
 router.register(r'pases', PaseViewSet)

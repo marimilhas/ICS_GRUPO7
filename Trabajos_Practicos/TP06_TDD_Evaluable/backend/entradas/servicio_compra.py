@@ -19,6 +19,34 @@ class ServicioCompraEntradas:
         self.servicio_calendario = servicio_calendario
         self.pase_repository = pase_repository  # <-- Nueva dependencia inyectada
 
+    def validar_parametros_compra(self, usuario: User, cantidad: int, fecha_visita: str, visitantes: list,
+                                  tipo_pago: str = None):
+        """
+        Ejecuta todas las validaciones de negocio sin modificar el estado de la aplicación.
+        Retorna True si la validación es exitosa, lanza excepción en caso contrario.
+        """
+        # 1. Validaciones de Formato y Lógica
+        self._validar_formato_usuario(usuario)
+        self._validar_usuario(usuario)
+        self._validar_formato_cantidad(cantidad)
+        self._validar_cantidad(cantidad, visitantes)
+
+        fecha_dt = self._validar_formato_fecha(fecha_visita)
+
+        self._validar_fecha_hora_visita(fecha_dt)
+
+        self._validar_formato_edades(visitantes)
+        self._validar_formato_pases(visitantes)
+        self._validar_valores_pases(visitantes)
+
+        self._validar_forma_pago(tipo_pago)
+
+        # Opcional, pero útil para tener el total:
+        monto_total = self._calcular_monto_total(visitantes)
+
+        # ✅ Retornar tupla
+        return True, monto_total
+
     # 1. Método Principal (Debe fallar para los tests de integración)
     def comprar_entradas(self, usuario: User, cantidad: int, fecha_visita: str, visitantes: list,
                          tipo_pago: str = None):
@@ -83,7 +111,7 @@ class ServicioCompraEntradas:
         # 6. Notificación
         confirmacion_email = self._enviar_confirmacion(usuario, compra)
 
-        return entradas_a_crear, confirmacion_email
+        return compra, entradas_a_crear, confirmacion_email
 
     def _get_pago_strategy(self, tipo_pago: str) -> IEstrategiaPago:
         """Determina y retorna la estrategia de pago basada en el tipo."""
@@ -160,22 +188,51 @@ class ServicioCompraEntradas:
 
     def _validar_fecha_hora_visita(self, fecha):
         """
-        Valida que la fecha sea en un dia donde el parque esté abierto (ni lunes, ni feriados como navidad o año nuevo),
-        que se compre durante horario habilitado
+        Valida que la fecha sea en un día donde el parque esté abierto.
+        Considera la hora solo si la fecha es hoy, o si la fecha futura trae hora.
+        Si la fecha futura no trae hora, se asume hora de apertura (09:00).
         """
-        # Creamos las fechas y horas necesarias para comparacion
+        from datetime import datetime
+
+        ahora = datetime.now()
+        hoy = ahora.date()
+        fecha_date = fecha.date()
         dia_fecha = fecha.weekday()
-        navidad = datetime(fecha.year, month=12, day=25) + timedelta(hours=fecha.hour, minutes=fecha.minute,
-                                                                     seconds=fecha.second)
-        anio_nuevo = datetime(fecha.year, month=1, day=1) + timedelta(hours=fecha.hour, minutes=fecha.minute,
-                                                                      seconds=fecha.second)
-        hora_fecha = fecha.hour
 
-        if fecha < datetime.now():
-            raise FechaInvalidaError
+        # Feriados
+        navidad = datetime(fecha.year, 12, 25).date()
+        anio_nuevo = datetime(fecha.year, 1, 1).date()
 
-        if fecha == navidad or fecha == anio_nuevo or dia_fecha == 0 or hora_fecha < 9 or hora_fecha >= 19:
-            raise ParqueCerradoError
+        # 1️⃣ Fecha pasada
+        if fecha_date < hoy:
+            raise FechaInvalidaError("La fecha de visita ya pasó")
+
+        # 2️⃣ Día cerrado: lunes o feriados
+        if dia_fecha == 0 or fecha_date in [navidad, anio_nuevo]:
+            raise ParqueCerradoError("El parque está cerrado en la fecha seleccionada")
+
+        # 3️⃣ Validar hora
+        hora = fecha.hour
+
+        if fecha_date == hoy:
+            # Si no se especificó hora (viene 00:00)
+            if fecha.hour == 0 and fecha.minute == 0 and fecha.second == 0:
+                # Si la hora actual es antes de las 19, permitir
+                if ahora.hour >= 19:
+                    raise ParqueCerradoError("El parque ya no abre hoy")
+            else:
+                # Si sí se especificó hora, validar rango
+                if hora < 9 or hora >= 19:
+                    raise ParqueCerradoError("El parque ya no abre hoy")
+        else:
+            # Fecha futura
+            if fecha.hour != 0 or fecha.minute != 0 or fecha.second != 0:
+                # Si el usuario especificó hora, validarla
+                if hora < 9 or hora >= 19:
+                    raise ParqueCerradoError("El parque no abre en ese horario para la fecha seleccionada")
+            else:
+                # Si no especificó hora, asumir apertura
+                fecha = fecha.replace(hour=9, minute=0, second=0)
 
     def _validar_valores_pases(self, visitantes: list):
         """
@@ -326,7 +383,7 @@ class ServicioCompraEntradas:
             raise ValueError("No se proporcionó información del usuario")
 
         # Lista de atributos obligatorios
-        atributos_requeridos = ["nombre", "email", "esta_registrado"]
+        atributos_requeridos = ["first_name", "email", "esta_registrado"]
 
         # Caso 2: Falta algún atributo requerido
         for atributo in atributos_requeridos:
@@ -334,8 +391,8 @@ class ServicioCompraEntradas:
                 raise ValueError(f"Falta el atributo '{atributo}'")
 
         # Caso 3: Validar contenido de nombre
-        if not isinstance(usuario.nombre, str) or usuario.nombre.strip() == "":
-            raise ValueError("El atributo 'nombre' no puede estar vacío")
+        if not isinstance(usuario.first_name, str) or usuario.first_name.strip() == "":
+            raise ValueError("El atributo 'first_name' no puede estar vacío")
 
         # Caso 4: Validar contenido de email
         if not isinstance(usuario.email, str) or usuario.email.strip() == "":

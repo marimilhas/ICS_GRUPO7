@@ -1,8 +1,15 @@
-from django.urls import path
-from . import views
-from .views import comprar_entradas_view
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from entradas.api.views import PaseViewSet, CompraViewSet
+from .views import ComprarEntradasView, ValidarCompraView  # 👈 corregido
+
+router = DefaultRouter()
+router.register(r'pases', PaseViewSet)
+
 
 urlpatterns = [
-    # Esta ruta se resuelve como: /api/ + comprar/ = /api/comprar/
-    path('comprar/', comprar_entradas_view, name='comprar_entradas'),
+    path('', include(router.urls)),
+    # reemplazamos /entradas/ por tu vista
+    path('compras/', ComprarEntradasView.as_view(), name='comprar_entradas'),
+    path('validar-compra/', ValidarCompraView.as_view(), name='validar_compra'),
 ]

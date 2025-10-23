@@ -15,12 +15,14 @@ class UsuarioNoRegistradoError(Exception):
 
 class ParqueCerradoError(Exception):
     """Para cuando en la fecha indicada el parque está cerrado (lunes, navidad o año nuevo)."""
-    pass
+    def __init__(self, mensaje="El parque está cerrado en la fecha seleccionada"):
+        super().__init__(mensaje)
 
 
 class FechaInvalidaError(Exception):
     """Para cuando la fecha indicada es anterior a la actual."""
-    pass
+    def __init__(self, mensaje="La fecha indicada es anterior a la actual"):
+        super().__init__(mensaje)
 
 
 class FormaDePagoRequeridaError(Exception):

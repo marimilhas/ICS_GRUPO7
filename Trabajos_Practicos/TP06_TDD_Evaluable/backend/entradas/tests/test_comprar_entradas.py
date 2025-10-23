@@ -33,7 +33,8 @@ def usuario_valido_mock(db):
     User = get_user_model()
 
     # Creamos un usuario real en la DB de test
-    user = User.objects.create_user(username='juanperez', email='juan@example.com', password='password123')
+    user = User.objects.create_user(username='juanperez', email='juan@example.com', password='password123', first_name='Juan',
+    last_name='Perez')
 
     # Añadimos el mock-atributo requerido por tu servicio de validación
     user.nombre = user.username  # Asume que el servicio usa 'nombre'
@@ -49,7 +50,8 @@ def usuario_no_valido_mock(db):
     from django.contrib.auth import get_user_model
     User = get_user_model()
 
-    user = User.objects.create_user(username='martinag', email='martina@example.com', password='password123')
+    user = User.objects.create_user(username='martinag', email='martina@example.com', password='password123', first_name='Martina',
+    last_name='Gonzalez')
     user.nombre = user.username
     user.esta_registrado = False  # Falla la validación inicial
     return user
@@ -207,7 +209,7 @@ def test_comprar_entradas_flujo_completo_tarjeta_exitoso(
     mock_correo.enviar_confirmacion.return_value = True
     monto_esperado = 32500.00
 
-    entradas_resultado, confirmacion = servicio_compra.comprar_entradas(
+    compra, entradas_resultado, confirmacion = servicio_compra.comprar_entradas(
         usuario=usuario_valido_mock,
         **datos_compra_validos
     )
@@ -297,7 +299,7 @@ def test_comprar_entradas_flujo_efectivo_exitoso(
     mock_correo = servicio_compra.servicio_correo
     mock_correo.enviar_confirmacion.return_value = True
 
-    entradas_resultado, confirmacion = servicio_compra.comprar_entradas(
+    compra, entradas_resultado, confirmacion = servicio_compra.comprar_entradas(
         usuario=usuario_valido_mock,
         **datos_efectivo
     )
@@ -347,7 +349,7 @@ def test_comprar_entradas_falla_envio_email(
     mock_pasarela.procesar_pago.return_value = True
     mock_correo.enviar_confirmacion.return_value = False
 
-    entradas_resultado, confirmacion = servicio_compra.comprar_entradas(
+    compra, entradas_resultado, confirmacion = servicio_compra.comprar_entradas(
         usuario=usuario_valido_mock,
         **datos_tarjeta
     )
@@ -1177,41 +1179,41 @@ def test_validar_formato_usuario_none_falla(servicio_compra):
 def test_validar_formato_usuario_falta_nombre_falla(servicio_compra):
     """ Falla si falta el atributo 'nombre'. """
     usuario_incompleto = Mock(email="test@test.com", esta_registrado=True, spec=['email', 'esta_registrado'])
-    with pytest.raises(ValueError, match="Falta el atributo 'nombre'"):
+    with pytest.raises(ValueError, match="Falta el atributo 'first_name'"):
         servicio_compra._validar_formato_usuario(usuario_incompleto)
 
 
 def test_validar_formato_usuario_falta_email_falla(servicio_compra):
     """ Falla si falta el atributo 'email'. """
-    usuario_incompleto = Mock(nombre="Test", esta_registrado=True, spec=['nombre', 'esta_registrado'])
+    usuario_incompleto = Mock(first_name="Test", esta_registrado=True, spec=['nombre', 'esta_registrado'])
     with pytest.raises(ValueError, match="Falta el atributo 'email'"):
         servicio_compra._validar_formato_usuario(usuario_incompleto)
 
 
 def test_validar_formato_usuario_falta_esta_registrado_falla(servicio_compra):
     """ Falla si falta el atributo 'esta_registrado'. """
-    usuario_incompleto = Mock(nombre="Test", email="test@test.com", spec=['nombre', 'email'])
+    usuario_incompleto = Mock(first_name="Test", email="test@test.com", spec=['nombre', 'email'])
     with pytest.raises(ValueError, match="Falta el atributo 'esta_registrado'"):
         servicio_compra._validar_formato_usuario(usuario_incompleto)
 
 
 def test_validar_formato_usuario_nombre_vacio_falla(servicio_compra):
     """ Falla si el nombre es un string vacío. """
-    usuario_invalido = Mock(nombre="", email="test@test.com", esta_registrado=True)
-    with pytest.raises(ValueError, match="El atributo 'nombre' no puede estar vacío"):
+    usuario_invalido = Mock(first_name="", email="test@test.com", esta_registrado=True)
+    with pytest.raises(ValueError, match="El atributo 'first_name' no puede estar vacío"):
         servicio_compra._validar_formato_usuario(usuario_invalido)
 
 
 def test_validar_formato_usuario_email_vacio_falla(servicio_compra):
     """ Falla si el email es un string vacío. """
-    usuario_invalido = Mock(nombre="Test", email="", esta_registrado=True)
+    usuario_invalido = Mock(first_name="Test", email="", esta_registrado=True)
     with pytest.raises(ValueError, match="El atributo 'email' no puede estar vacío"):
         servicio_compra._validar_formato_usuario(usuario_invalido)
 
 
 def test_validar_formato_usuario_tipo_incorrecto_falla(servicio_compra):
     """Falla si 'esta_registrado' no es booleano."""
-    usuario_invalido = Mock(nombre="Test", email="test@test.com", esta_registrado="True")
+    usuario_invalido = Mock(first_name="Test", email="test@test.com", esta_registrado="True")
     with pytest.raises(ValueError, match="El atributo 'esta_registrado' debe ser de tipo bool"):
         servicio_compra._validar_formato_usuario(usuario_invalido)
 
