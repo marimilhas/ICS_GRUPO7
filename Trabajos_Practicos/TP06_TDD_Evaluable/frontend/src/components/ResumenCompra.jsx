@@ -1,10 +1,12 @@
 import React, { useMemo } from "react";
 
-// 💡 Props: Añadir procesandoPago
 const ResumenCompra = ({ compra, onEditar, onConfirmar, procesandoPago }) => {
   
   const { edadesAgrupadas, cantidadRegulares, cantidadVIP } = useMemo(() => {
-    const edades = compra.entradas
+    // Aseguramos que compra.entradas exista y sea un array
+    const entradasArray = Array.isArray(compra?.entradas) ? compra.entradas : [];
+
+    const edades = entradasArray
       .map(e => e.edad)
       .sort((a, b) => a - b)
       .reduce((acc, edad) => {
@@ -14,10 +16,13 @@ const ResumenCompra = ({ compra, onEditar, onConfirmar, procesandoPago }) => {
 
     return {
       edadesAgrupadas: Object.entries(edades),
-      cantidadRegulares: compra.entradas.filter(e => e.pase === "regular").length,
-      cantidadVIP: compra.entradas.filter(e => e.pase === "VIP").length
+      cantidadRegulares: entradasArray.filter(e => e.pase?.toLowerCase() === "regular").length,
+      cantidadVIP: entradasArray.filter(e => e.pase?.toLowerCase() === "vip").length
     };
   }, [compra]);
+
+  if (!compra) return <div className="text-center text-gray-500">Cargando resumen...</div>;
+
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-green-light">

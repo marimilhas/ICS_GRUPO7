@@ -13,6 +13,7 @@ export const useCompraEntradas = () => {
     try {
       console.log('🚀 Iniciando procesamiento de compra...');
       const resultado = await servicioCompra.procesarCompra(datosCompra);
+      console.log('💡 Resultado desde servicioCompra:', resultado);
       
       // Mensaje de confirmación para el email - MANTENIDO
       const mensajeMail = `
