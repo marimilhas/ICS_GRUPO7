@@ -6,7 +6,7 @@ import Confirmacion from "./components/Confirmacion";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Usuario from "./components/Usuario";
-import { useCompraEntradas } from '../hooks/useCompraEntradas'; // 💡 Importar hook para consistencia
+import { useCompraEntradas } from './hooks/useCompraEntradas';
 import "./App.css";
 
 

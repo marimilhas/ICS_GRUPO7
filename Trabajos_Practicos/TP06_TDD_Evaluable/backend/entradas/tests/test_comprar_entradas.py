@@ -104,8 +104,14 @@ def servicio_compra(mocks_infraestructura, pases_iniciales):
 def pases_iniciales(db):
     """Crea los tipos de pase en la DB de prueba."""
 
-    Pase.objects.create(tipo="Regular", precio=5000.00)
-    Pase.objects.create(tipo="VIP", precio=10000.00)
+    Pase.objects.update_or_create(
+        tipo="Regular",
+        defaults={"precio": 5000.00}
+    )
+    Pase.objects.update_or_create(
+        tipo="VIP",
+        defaults={"precio": 10000.00}
+    )
 
     # Retornamos los pases válidos para usarlos como referencia
     return ["Regular", "VIP"]

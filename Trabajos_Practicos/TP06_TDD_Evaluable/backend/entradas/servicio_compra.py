@@ -1,17 +1,14 @@
 # servicio_compra.py
 
 from django.contrib.auth.models import User
+from datetime import datetime, timedelta
 from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError, \
     FechaInvalidaError, PermissionError
-from datetime import datetime, timedelta
 
 from .repositories import PaseRepository
 from .estrategias_pago import PagoEfectivoStrategy, PagoTarjetaStrategy, IEstrategiaPago
 from .models import Compra, Entrada
 
-
-# Asegúrate de que las excepciones necesarias están definidas en excepciones.py
-# from .excepciones import LimiteEntradasExcedidoError, ParqueCerradoError, PagoRechazadoError, EdadInvalidaError
 
 class ServicioCompraEntradas:
     """Clase de la Capa de Lógica de Negocio (Service)."""
@@ -387,3 +384,4 @@ class ServicioCompraEntradas:
     def _enviar_notificacion(self, usuario: User, compra):
         """Envía notificaciones."""
         raise NotImplementedError("Método pendiente de implementación en fase GREEN.")
+    
