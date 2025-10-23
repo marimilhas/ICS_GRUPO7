@@ -1,7 +1,7 @@
-
 class LimiteEntradasExcedidoError(Exception):
     """Lanzada cuando la cantidad de entradas supera el límite de 10."""
-    pass
+    def __init__(self, mensaje="No se pueden comprar más de 10 entradas por transacción"):
+        super().__init__(mensaje)
 
 
 class Usuario:
@@ -10,7 +10,8 @@ class Usuario:
 
 
 class UsuarioNoRegistradoError(Exception):
-    pass
+    def __init__(self, mensaje="El usuario debe estar registrado para realizar esta operación"):
+        super().__init__(mensaje)
 
 
 class ParqueCerradoError(Exception):
@@ -27,39 +28,47 @@ class FechaInvalidaError(Exception):
 
 class FormaDePagoRequeridaError(Exception):
     """Para cuando falla una validación de forma de pago"""
-    pass
+    def __init__(self, mensaje="Debe seleccionar una forma de pago válida"):
+        super().__init__(mensaje)
 
 
 class EdadInvalidaError(Exception):
     """Para cuando la edad no cumple el formato, es negativa o muy alta."""
-    pass
+    def __init__(self, mensaje="La edad ingresada no es válida"):
+        super().__init__(mensaje)
 
 
 class PagoRechazadoError(Exception):
     """Para cuando la pasarela de pagos rechaza una transacción."""
-    pass
+    def __init__(self, mensaje="El pago fue rechazado por la pasarela de pagos"):
+        super().__init__(mensaje)
 
 
 class PermissionError(Exception):
     """Para cuando el usuario no tiene permisos"""
-    pass
+    def __init__(self, mensaje="No tiene permisos para realizar esta acción"):
+        super().__init__(mensaje)
 
 
 class TimeoutError(Exception):
     """Para casos de timeout"""
-    pass
+    def __init__(self, mensaje="Tiempo de espera agotado para la operación"):
+        super().__init__(mensaje)
 
 
 class ConnectionError(Exception):
     """Para errores de conexión"""
-    pass
+    def __init__(self, mensaje="Error de conexión con el servicio"):
+        super().__init__(mensaje)
 
 
 class EmailError(Exception):
-    """Para errores de conexión"""
-    pass
+    """Para errores de envío de email"""
+    def __init__(self, mensaje="Error al enviar el correo electrónico"):
+        super().__init__(mensaje)
 
 
 class TipoPaseInvalidoError(Exception):
-    """Para errores de conexión"""
-    pass
+    """Para tipos de pase inválidos"""
+    def __init__(self, mensaje="El tipo de pase seleccionado no es válido"):
+        super().__init__(mensaje)
