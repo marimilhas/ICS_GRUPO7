@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from entradas.models import Pase, Compra, Entrada
 from django.contrib.auth.models import User 
+from entradas.models import Pase, Compra, Entrada
 
 # --- Serializadores Base ---
 

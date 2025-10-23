@@ -19,11 +19,10 @@ const FormularioCompra = ({ onCompra }) => {
 
   // Hook para la lógica asíncrona de envío de compra
   const { procesarCompra, loading, error } = useCompraEntradas();
-
   const diasCerrados = [1]; // 1: Lunes
   const diasFestivos = [
     { dia: 25, mes: 12 }, // 25 de diciembre
-    { dia: 1, mes: 1 }    // 1 de enero
+    { dia: 1, mes: 1 }, // 1 de enero
   ];
 
   // ==========================================================
@@ -47,9 +46,8 @@ const FormularioCompra = ({ onCompra }) => {
     cargarPases();
   }, []);
 
-  // Validar TODO el formulario en cada cambio
+  // Validar todo el formulario en cada cambio
   useEffect(() => {
-    // Solo validar si el usuario ya modificó al menos un campo
     if (Object.keys(camposModificados).length > 0) {
       validarFormularioCompleto();
     }
@@ -57,7 +55,6 @@ const FormularioCompra = ({ onCompra }) => {
 
   const validarFecha = (fechaString) => {
     if (!fechaString) return { valido: false, mensaje: "La fecha de visita es obligatoria" };
-
     const fechaActual = new Date();
     fechaActual.setHours(0, 0, 0, 0);
 
@@ -65,7 +62,6 @@ const FormularioCompra = ({ onCompra }) => {
     const [anioStr, mesStr, diaStr] = fechaString.split('-');
     const dia = parseInt(diaStr, 10);
     const mes = parseInt(mesStr, 10);
-
     const fechaSeleccionada = new Date(parseInt(anioStr), mes - 1, dia); // para comparar con fechaActual
 
     if (fechaSeleccionada < fechaActual) {
@@ -86,7 +82,6 @@ const FormularioCompra = ({ onCompra }) => {
     return { valido: true, mensaje: "" };
   };
 
-
   const validarCantidad = (cant) => {
     if (cant < 1) return { valido: false, mensaje: "Debe comprar al menos 1 entrada" };
     if (cant > 10) return { valido: false, mensaje: "Máximo 10 entradas por compra" };
@@ -95,10 +90,10 @@ const FormularioCompra = ({ onCompra }) => {
 
   const validarEdades = (eds) => {
     for (let i = 0; i < eds.length; i++) {
-      if (!eds[i] || eds[i] < 0 || eds[i] > 120) {
+      if (eds[i] === null || eds[i] === undefined || eds[i] < 0 || eds[i] > 120) {
         return {
           valido: false,
-          mensaje: `Edad inválida para visitante ${i + 1} (0-120)`
+          mensaje: `Edad inválida (0-120)`
         };
       }
     }
@@ -121,7 +116,6 @@ const FormularioCompra = ({ onCompra }) => {
   const validarFormularioCompleto = () => {
     const nuevosErrores = {};
     let esValido = true;
-
     const validacionFecha = validarFecha(fecha);
     if (!validacionFecha.valido) {
       nuevosErrores.fecha = validacionFecha.mensaje;
@@ -134,9 +128,14 @@ const FormularioCompra = ({ onCompra }) => {
       esValido = false;
     }
 
-    const validacionEdades = validarEdades(entradas.map(e => e.edad));
+    const edades = entradas.map(e => e.edad);
+    const validacionEdades = validarEdades(edades);
     if (!validacionEdades.valido && camposModificados.entradas) {
-      nuevosErrores.edades = validacionEdades.mensaje;
+      const cantidadErrores = edades.filter(edad => edad === null || edad === undefined || edad < 0 || edad > 120).length;
+      nuevosErrores.edades = {
+        mensajeBase: validacionEdades.mensaje,
+        cantidad: cantidadErrores
+      };
       esValido = false;
     }
 
@@ -160,7 +159,6 @@ const FormularioCompra = ({ onCompra }) => {
   const manejarCambioFecha = (valor) => {
     setCamposModificados(prev => ({ ...prev, fecha: true }));
     setFecha(valor);
-
     const validacion = validarFecha(valor);
     if (!validacion.valido) {
       setErrores(prev => ({ ...prev, fecha: validacion.mensaje }));
@@ -171,7 +169,6 @@ const FormularioCompra = ({ onCompra }) => {
 
   const manejarCambio = (campo, valor) => {
     setCamposModificados(prev => ({ ...prev, [campo]: true }));
-
     switch (campo) {
       case 'cantidad':
         const nuevaCantidad = parseInt(valor) || 0;
@@ -191,6 +188,7 @@ const FormularioCompra = ({ onCompra }) => {
       case 'formaPago':
         setFormaPago(valor);
         break;
+
       case 'mail':
         setMail(valor);
         break;
@@ -228,6 +226,7 @@ const FormularioCompra = ({ onCompra }) => {
       precio: "$0,00",
       precioNumerico: 0 // Usado para cálculo interno
     };
+
     if (edad < 10 || edad >= 61) return { // Niños y Adultos Mayores: 50%
       tipo: edad < 10 ? "Niño" : "Adulto Mayor",
       color: edad < 10 ? "bg-green-medium/15 border-green-medium" : "bg-green-dark/15 border-green-dark",
@@ -237,6 +236,7 @@ const FormularioCompra = ({ onCompra }) => {
       precio: `$${(precioBase * 0.5).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       precioNumerico: precioBase * 0.5
     };
+
     return { // Adultos: precio completo
       tipo: "Adulto",
       color: "bg-green-forest/15 border-green-forest",
@@ -274,6 +274,7 @@ const FormularioCompra = ({ onCompra }) => {
   // ==========================================================
   // 🚀 LÓGICA DE CONEXIÓN AL BACKEND (2: Envío de Compra)
   // ==========================================================
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -350,7 +351,6 @@ const FormularioCompra = ({ onCompra }) => {
 
   const entradasRender = Object.values(entradasAgrupadas);
 
-
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-green-light">
       <h2 className="text-3xl font-bold text-green-dark mb-8 text-center">
@@ -401,7 +401,6 @@ const FormularioCompra = ({ onCompra }) => {
                   </p>
                 ) : null}
               </div>
-
             </label>
 
             <label className="block">
@@ -421,7 +420,6 @@ const FormularioCompra = ({ onCompra }) => {
                 )}
               </div>
             </label>
-
           </div>
 
           {/* Columna Derecha */}
@@ -529,28 +527,28 @@ const FormularioCompra = ({ onCompra }) => {
               <div className="flex items-center justify-between bg-green-light bg-opacity-15 px-3 py-2 rounded-lg border border-green-light">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-light rounded-full"></div>
-                  <span className="font-medium">Infantes (0-2)</span>
+                  <span className="font-medium">Infantes (0-3)</span>
                 </div>
                 <span className="font-bold text-green-light-bold">GRATIS</span>
               </div>
               <div className="flex items-center justify-between bg-green-medium bg-opacity-15 px-3 py-2 rounded-lg border border-green-medium">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-medium rounded-full"></div>
-                  <span className="font-medium">Niños (3-9)</span>
+                  <span className="font-medium">Niños (4-10)</span>
                 </div>
                 <span className="font-bold text-green-medium-bold">50% DESC</span>
               </div>
               <div className="flex items-center justify-between bg-green-forest bg-opacity-15 px-3 py-2 rounded-lg border border-green-forest">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-forest rounded-full"></div>
-                  <span className="font-medium">Adultos (10-60)</span>
+                  <span className="font-medium">Adultos (11-59)</span>
                 </div>
                 <span className="font-bold text-green-forest-bold">PRECIO COMPLETO</span>
               </div>
               <div className="flex items-center justify-between bg-green-dark bg-opacity-15 px-3 py-2 rounded-lg border border-green-dark">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-dark rounded-full"></div>
-                  <span className="font-medium">Adultos Mayores (61 o +)</span>
+                  <span className="font-medium">Adultos Mayores (60+)</span>
                 </div>
                 <span className="font-bold text-green-dark-bold">50% DESC</span>
               </div>
@@ -569,34 +567,31 @@ const FormularioCompra = ({ onCompra }) => {
               <span>visitante{cantidad !== 1 ? 's' : ''}</span>
             </div>
           </div>
-
-          {errores.edades && (
+          {errores.edades && typeof errores.edades === 'object' && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm font-medium flex items-center gap-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
-                {errores.edades}
+                {errores.edades.cantidad === 1 ? 'Edad inválida' : `Existen ${errores.edades.cantidad} edades inválidas`} (0-120)
               </p>
             </div>
           )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {entradas.map((entrada, index) => {
               const categoria = obtenerCategoriaEdad(entrada.edad, entrada.pase);
               return (
                 <div
                   key={index}
-                  className={`relative p-4 rounded-xl border-2 transition-all duration-300 ${(errores.edades || entrada.edad === null || entrada.edad === undefined || entrada.edad < 0 || entrada.edad > 120)
+                  className={`relative p-4 rounded-xl border-2 transition-all duration-300 ${(entrada.edad === null || entrada.edad === undefined || entrada.edad < 0 || entrada.edad > 120)
                     ? 'border-red-300 bg-red-50'
                     : categoria.color
                     } hover:shadow-md`}
-
                 >
                   {/* Header de la tarjeta */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${categoria.puntoColor}`}></div>
+                      <div className={`w-3 h-3 rounded-full ${(entrada.edad === null || entrada.edad === undefined || entrada.edad < 0 || entrada.edad > 120) ? 'bg-red-500' : categoria.puntoColor}`}></div>
                       <span className="font-semibold text-sm">Visitante {index + 1}</span>
                     </div>
                     <div className={`text-xs font-medium px-2 py-1 rounded-full border ${categoria.badgeColor}`}>
@@ -614,7 +609,7 @@ const FormularioCompra = ({ onCompra }) => {
                         max="120"
                         value={entrada.edad}
                         onChange={(e) => manejarCambioEntrada(index, 'edad', e.target.value)}
-                        className={`w-full border rounded-lg px-3 py-2 text-center font-semibold focus:ring-2 focus:ring-green-dark focus:border-transparent ${(errores.edades || entrada.edad === null || entrada.edad === undefined || entrada.edad < 0 || entrada.edad > 120)
+                        className={`w-full border rounded-lg ... ${(entrada.edad === null || entrada.edad === undefined || entrada.edad < 0 || entrada.edad > 120)
                           ? 'border-red-300 bg-white'
                           : 'border-gray-300'
                           }`}
@@ -636,7 +631,6 @@ const FormularioCompra = ({ onCompra }) => {
                       <option value="VIP">VIP</option>
                     </select>
                   </div>
-
 
                   {/* Información de precio */}
                   {entrada.edad >= 0 && entrada.edad <= 120 && entrada.edad !== "" && (
@@ -664,12 +658,10 @@ const FormularioCompra = ({ onCompra }) => {
                       <span className="text-red-500 font-medium">Edad inválida</span>
                     )}
                   </div>
-
                 </div>
               );
             })}
           </div>
-
         </div>
 
         {/* Resumen de Precio */}

@@ -1,10 +1,10 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response 
-from rest_framework import status # <--- IMPORTACIÓN AÑADIDA
+from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from django.contrib.auth.models import User 
 from entradas.models import Pase, Compra, Entrada
 from .serializers import PaseSerializer, CompraSerializer, EntradaSerializer
-from django.contrib.auth.models import User 
 
 # --- Vistas (ViewSets) ---
 
