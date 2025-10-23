@@ -301,6 +301,38 @@ const FormularioCompra = ({ onCompra }) => {
         </div>
       )}
 
+      {/* Información importante sobre horarios */}
+      <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex flex-col items-center text-center">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-5 h-5 text-[#3DA35D] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <h3 className="font-semibold text-[#3DA35D] text-lg">Información importante</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+            <div className="flex items-center justify-center gap-2 text-green-700">
+              <svg className="w-4 h-4 text-[#3DA35D] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span><span className="font-medium">Horario:</span> 9:00 - 19:00 hrs</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-green-700">
+              <svg className="w-4 h-4 text-[#3DA35D] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span><span className="font-medium">Lunes:</span> Cerrado</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-green-700">
+              <svg className="w-4 h-4 text-[#3DA35D] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span><span className="font-medium">25 Dic / 1 Ene:</span> Cerrado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Formulario de Compra */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
