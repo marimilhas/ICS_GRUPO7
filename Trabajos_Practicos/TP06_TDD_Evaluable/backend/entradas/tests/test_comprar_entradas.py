@@ -1214,4 +1214,29 @@ def test_validar_formato_usuario_tipo_incorrecto_falla(servicio_compra):
     usuario_invalido = Mock(nombre="Test", email="test@test.com", esta_registrado="True")
     with pytest.raises(ValueError, match="El atributo 'esta_registrado' debe ser de tipo bool"):
         servicio_compra._validar_formato_usuario(usuario_invalido)
-        
+
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMA DE PAGO ---
+
+def test_validar_forma_pago_valido_pasa(servicio_compra):
+    """ Pasa si el tipo de pago es Tarjeta o Efectivo (valores válidos). """
+    try:
+        servicio_compra._validar_forma_pago("Tarjeta")
+        servicio_compra._validar_forma_pago("Efectivo")
+    except ValueError:
+        pytest.fail("La validación de forma de pago no debería haber fallado con valores válidos.")
+
+def test_validar_forma_pago_none_falla(servicio_compra):
+    """ Falla si tipo_pago es None (CdE: Ausencia de valor). """
+    with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
+        servicio_compra._validar_forma_pago(None)
+
+def test_validar_forma_pago_vacio_falla(servicio_compra):
+    """ Falla si tipo_pago es string vacío/solo espacios (CdE: Formato inválido). """
+    with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
+        servicio_compra._validar_forma_pago(" ")
+
+def test_validar_forma_pago_invalido_falla(servicio_compra):
+    """ Falla si el valor es un string no reconocido (CdE: Valor fuera de rango). """
+    with pytest.raises(ValueError, match="Forma de pago inválida: 'Cheque' no reconocido"):
+        servicio_compra._validar_forma_pago("Cheque")
