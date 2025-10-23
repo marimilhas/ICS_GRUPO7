@@ -9,24 +9,27 @@ class Usuario:
     pass
 
 
-# Excepciones que usaremos en futuros tests
 class UsuarioNoRegistradoError(Exception):
     pass
 
 
 class ParqueCerradoError(Exception):
+    """Para cuando en la fecha indicada el parque está cerrado (lunes, navidad o año nuevo)."""
     pass
 
 
 class FechaInvalidaError(Exception):
+    """Para cuando la fecha indicada es anterior a la actual."""
     pass
 
 
 class FormaDePagoRequeridaError(Exception):
+    """Para cuando falla una validación de forma de pago"""
     pass
 
 
 class EdadInvalidaError(Exception):
+    """Para cuando la edad no cumple el formato, es negativa o muy alta."""
     pass
 
 

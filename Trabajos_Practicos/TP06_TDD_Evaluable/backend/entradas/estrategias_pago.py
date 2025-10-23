@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from .excepciones import PagoRechazadoError
 from .models import EstadosPago
@@ -33,7 +32,6 @@ class PagoEfectivoStrategy(IEstrategiaPago):
 
     def procesar_pago(self, monto: float, pasarela_pagos):
         # No hay interacción con la pasarela; solo se registra como pendiente.
-        # Podrías registrar una notificación interna aquí si fuera necesario.
         return EstadosPago.PENDIENTE.value # Retorna 'PEN'
 
 # --- 3. CONTEXTO (Simplificado y gestionado por ServicioCompraEntradas) ---
