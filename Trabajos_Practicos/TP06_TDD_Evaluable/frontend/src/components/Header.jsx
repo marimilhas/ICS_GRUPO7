@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import logo from "../assets/logo_reducido.png";
 import "../css/header.css";
+import Usuario from "./Usuario";
 
 const Header = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -9,6 +10,7 @@ const Header = () => {
     <header className="text-white py-4 shadow-md" id="header">
       <div className="max-w-6xl mx-auto flex justify-between items-center px-4">
 
+        {/* Logo y Título */}
         <div className="flex items-center gap-2">
           <img
             src={logo}
@@ -32,24 +34,34 @@ const Header = () => {
           )}
         </button>
 
-
         {/* Barra de navegación para PC */}
         <nav className="hidden md:block">
-          <ul className="flex gap-8 text-lg font-semibold">
-            <li className="cursor-pointer transition navegacion">Inicio</li>
-            <li className="cursor-pointer transition navegacion">Entradas</li>
-            <li className="cursor-pointer transition navegacion">Actividades</li>
-          </ul>
+          <div className="flex items-center gap-8">
+            <ul className="flex gap-8 text-lg font-semibold">
+              <li className="cursor-pointer transition navegacion">Inicio</li>
+              <li className="cursor-pointer transition navegacion">Entradas</li>
+              <li className="cursor-pointer transition navegacion">Actividades</li>
+            </ul>
+            <Usuario />
+          </div>
         </nav>
       </div>
 
-      {/* Menú desplegable para celulares */}
+      {/* Menú desplegable para celulares*/}
       {menuAbierto && (
         <nav className="md:hidden bg-green-forest text-white mt-2 shadow-lg rounded-lg mx-4">
           <ul className="flex flex-col items-center gap-3 py-4 text-lg font-semibold">
             <li className="cursor-pointer navegacion">Inicio</li>
             <li className="cursor-pointer navegacion">Entradas</li>
             <li className="cursor-pointer navegacion">Actividades</li>
+            <li className="w-3/4 border-t border-white/30 my-2"></li>
+            <li className="font-normal text-white/90">Ana López</li>
+            <li 
+              className="cursor-pointer navegacion text-sm"
+              onClick={() => console.log("Cerrando sesión...")}
+            >
+              Cerrar sesión
+            </li>
           </ul>
         </nav>
       )}
