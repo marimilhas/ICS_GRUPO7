@@ -4,12 +4,16 @@ from datetime import datetime, date
 from datetime import timedelta
 from unittest.mock import MagicMock, Mock
 
-# Importar las clases y excepciones (asumiendo que existen en el modelo)
-# from src.models import *
-# from src.exceptions import *
-# from src.servicio_compra import ServicioCompraEntradas
 
-from ..excepciones import *
+from ..excepciones import (
+    LimiteEntradasExcedidoError,
+    ParqueCerradoError,
+    FechaInvalidaError,
+    EdadInvalidaError,
+    PagoRechazadoError,
+    PermissionError,
+    TipoPaseInvalidoError,
+)
 from ..models import Compra, Entrada
 from ..servicio_compra import ServicioCompraEntradas
 from ..repositories import PaseRepository  # Necesitas esta importación
@@ -18,16 +22,6 @@ from ..models import Pase, EstadosPago
 
 # --- FIXTURES ---
 
-
-# @pytest.fixture
-# def usuario_valido_mock():
-#    """Retorna un mock que simula un objeto Usuario ya cargado y válido."""
-#    return Mock(nombre="Juan Pérez", email="juan@example.com", esta_registrado=True)
-
-# @pytest.fixture
-# def usuario_no_valido_mock():
-#    """Retorna un mock que simula un objeto Usuario no registrado."""
-#    return Mock(nombre="Martina González", email="matina@example.com", esta_registrado=False)
 
 @pytest.fixture
 def usuario_valido_mock(db):
@@ -1164,24 +1158,6 @@ def test_validar_usuario_registrado_pasa(servicio_compra, usuario_valido_mock):
         pytest.fail("La validación no debería haber fallado para un usuario registrado.")
 
 
-# DEJO LA ALTERNATIVA POR SI NO SE PUEDE SIMULAR EL OBJETO USUARIO EN EL FRONTEND
-
-# def test_validar_usuario_no_registrado_falla(servicio_compra):
-#     """ Falla si un usuario no registrado intenta comprar entradas."""
-#     email_no_registrado = "otro@email.com"
-
-#     with pytest.raises(PermissionError, match="Usuario no registrado"):
-#         servicio_compra._validar_usuario(email_no_registrado)
-
-# def test_validar_usuario_registrado_pasa(servicio_compra):
-#     """ Pasa si un usuario registrado intenta comprar entradas."""
-#     email_registrado = "TestUser@Example.com"
-#     try:
-#         servicio_compra._validar_usuario(email_registrado)
-#     except PermissionError:
-#         pytest.fail("La validación no debería haber fallado para el email registrado.")
-
-
 # --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE USUARIO  ---
 
 def test_validar_formato_usuario_valido_pasa(servicio_compra, usuario_valido_mock):
@@ -1238,71 +1214,4 @@ def test_validar_formato_usuario_tipo_incorrecto_falla(servicio_compra):
     usuario_invalido = Mock(nombre="Test", email="test@test.com", esta_registrado="True")
     with pytest.raises(ValueError, match="El atributo 'esta_registrado' debe ser de tipo bool"):
         servicio_compra._validar_formato_usuario(usuario_invalido)
-
-
-
-    # DEJO LA ALTERNATIVA POR SI NO SE PUEDE SIMULAR EL OBJETO USUARIO EN EL FRONTEND
-
-# # --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE EMAIL ---
-
-# @pytest.mark.parametrize("email_valido", [
-#     "test@example.com",
-#     "usuario.apellido@dominio.co",
-#     "nombre+alias@sub.dominio.info",
-#     "123@numeros.net",
-# ])
-# def test_validar_formato_email_valido_pasa(servicio_compra, email_valido):
-#     """ Pasa con emails de formato válido. """
-#     try:
-#         servicio_compra._validar_formato_email(email_valido)
-#     except ValueError:
-#         pytest.fail(f"La validación de formato no debería haber fallado para '{email_valido}'.")
-
-# @pytest.mark.parametrize("email_invalido", [
-#     "sin_arroba.com",        
-#     "@dominio.com",          
-#     "usuario@",             
-#     "usuario@dominio",      
-#     "usuario@dominio.",     
-#     "usuario con espacio@dom.com",
-#     "",                     
-# ])
-# def test_validar_formato_email_invalidos_falla(servicio_compra, email_invalido):
-#     """ Falla con strings de formato inválido o vacío. """
-#     with pytest.raises(ValueError, match="El email tiene un formato inválido o está vacío."):
-#         servicio_compra._validar_formato_email(email_invalido)
-
-# def test_validar_formato_email_falla_con_none(servicio_compra):
-#     """ Falla si se pasa None. """
-#     with pytest.raises(ValueError, match="El email no fue proporcionado"):
-#         servicio_compra._validar_formato_email(None)
-
-# def test_validar_formato_email_falla_con_tipo_incorrecto(servicio_compra):
-#     """ Falla si no es un string. """
-#     with pytest.raises(ValueError, match="El email debe ser texto"):
-#         servicio_compra._validar_formato_email(12345)
-
-# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMA DE PAGO ---
-
-def test_validar_forma_pago_valido_pasa(servicio_compra):
-    """ Pasa si el tipo de pago es Tarjeta o Efectivo (valores válidos). """
-    try:
-        servicio_compra._validar_forma_pago("Tarjeta")
-        servicio_compra._validar_forma_pago("Efectivo")
-    except ValueError:
-        pytest.fail("La validación de forma de pago no debería haber fallado con valores válidos.")
-
-def test_validar_forma_pago_none_falla(servicio_compra):
-    """ Falla si tipo_pago es None (CdE: Ausencia de valor). """
-    with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
-        servicio_compra._validar_forma_pago(None)
-
-def test_validar_forma_pago_vacio_falla(servicio_compra):
-    """ Falla si tipo_pago es string vacío/solo espacios (CdE: Formato inválido). """
-    with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
-        servicio_compra._validar_forma_pago(" ")
-
-def test_validar_forma_pago_invalido_falla(servicio_compra):
-    """ Falla si el valor es un string no reconocido (CdE: Valor fuera de rango). """
-    with pytest.raises(ValueError, match="Forma de pago inválida: 'Cheque' no reconocido"):
-        servicio_compra._validar_forma_pago("Cheque")
+        
