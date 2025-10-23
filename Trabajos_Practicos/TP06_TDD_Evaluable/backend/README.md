@@ -1,98 +1,131 @@
-🚀 CÓMO EJECUTAR EN BACKEND PASO A PASO
+# 🚀 CONFIGURACIÓN Y EJECUCIÓN DEL BACKEND ------------------------------------------------------------
 
-Estos comandos te permiten configurar el entorno, instalar dependencias, crear el usuario por defecto y ejecutar los tests del proyecto.
+Este documento describe los pasos para configurar el entorno de desarrollo del backend, manejar la base de datos, ejecutar la aplicación y correr los tests.
 
-🧹 Si ya existe una carpeta venv
-Antes de crear un nuevo entorno virtual, eliminá el anterior (si ya existe):
+## 📋 Prerrequisitos
+
+* **Python:** Asegúrate de tener Python instalado (verifica la versión requerida por el proyecto).
+* **pip:** El instalador de paquetes de Python (usualmente viene con Python).
+* **Git:** Para clonar el repositorio.
+
+## ⚙️ CONFIGURACIÓN INICIAL PASO A PASO
+
+Sigue estos pasos para poner en marcha el proyecto en tu máquina local:
+
+### 1. Crear y Activar el Entorno Virtual (venv)
+
+# Elimina la carpeta venv anterior si existe (Comando para PowerShell)
 Remove-Item -Recurse -Force .\venv
+# Comando para Bash/Cmd (verifica antes de ejecutar!)
+rm -rf venv || rmdir /s /q venv
 
-🧩 1. Crear el entorno virtual
+# Crear el entorno virtual
 python -m venv venv
 
-▶️ 2. Activar el entorno virtual
-venv\Scripts\activate
+# Activar el entorno virtual
+# En Windows (PowerShell/Cmd):
+.\venv\Scripts\activate
+# En Linux/macOS (Bash/Zsh):
+source venv/bin/activate
 
-💡 Si aparece un error de permisos, ejecutá lo siguiente y volvé a intentar:
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-venv\Scripts\activate
+# Nota para PowerShell en Windows: Si al activar obtienes un error de permisos, ejecuta
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass 
 
-📦 3. Instalar dependencias
-Primero instalá Django por las dudas:
-pip install django
-Luego instalá las dependencias del proyecto:
+# 2. Instalar Dependencias
+
 pip install -r requirements.txt
 
-👤 4. Crear usuario por defecto (ID = 2)
-Si todavía no existe la base de datos o necesitás un usuario predeterminado, ejecutá lo siguiente:
-Entrar a la shell de Django:
-python manage.py shell
-Copiar y pegar el siguiente código dentro de la shell:
-from django.contrib.auth.models import User
+# 3. Configurar la Base de Datos Local (SQLite)
 
-# Crear usuario con ID 2
-user = User.objects.create_user(
-    id=2,
-    username='cliente_default',
-    email='cliente@default.com',
-    password='password123'
-)
-user.first_name = 'Cliente'
-user.last_name = 'Default'
-user.save()
-
-print(f"Usuario creado: {user.username} (ID: {user.id})")
-
-Salir de la shell con:
-exit()
-
-🧪 5. Ejecutar tests
-Para correr un test específico:
-pytest entradas/tests/test_comprar_entradas.py -v
-Para mostrar solo los tests que pasaron:
-pytest -v | findstr PASSED
-
-🚪 6. Salir del entorno virtual
-deactivate
-
-📘 GUÍA PARA MANEJAR LA BASE DE DATOS DEL PROYECTO
-
-El proyecto utiliza SQLite como base de datos local.
-El archivo db.sqlite3 no se sube al repositorio, ya que está listado en .gitignore.
-Cada integrante genera su propia base de datos a partir de las migraciones.
-
-🧩 Cómo crear la base de datos local
-
+# Crea las migraciones (si hay cambios en los modelos no migrados)
 python manage.py makemigrations
+
+# Aplica las migraciones para crear las tablas en db.sqlite3
 python manage.py migrate
 
-Esto crea el archivo db.sqlite3 y todas las tablas necesarias en tu entorno local.
-
-Si existe un archivo de datos iniciales (initial_data.json), podés cargarlo con:
+# (Opcional: Si existe un archivo initial_data.json con datos iniciales)
 python manage.py loaddata initial_data.json
 
-🔁 Cómo mantener la base de datos actualizada
+# 4. Crear Usuario por Defecto (Opcional, ID=2)
 
-Cuando un integrante modifica los modelos del proyecto, debe crear y subir las migraciones al repositorio para que los demás puedan actualizar su base local.
+# Entra a la shell interactiva de Django
+python manage.py shell
 
-Crear migraciones:
+# Una vez dentro de la shell, ejecuta el siguiente código Python:
+from django.contrib.auth.models import User
+from django.db import IntegrityError
+
+try:
+    # Intentar crear usuario con ID 2
+    user = User.objects.create_user(
+        id=2,
+        username='cliente_default',
+        email='cliente@default.com',
+        password='password123'
+    )
+    user.first_name = 'Cliente'
+    user.last_name = 'Default'
+    user.save()
+    print(f"Usuario creado: {user.username} (ID: {user.id})")
+except IntegrityError:
+    print("El usuario con ID 2 ya existe o el ID está en uso.")
+except Exception as e:
+    print(f"Ocurrió un error: {e}")
+
+# Salir de la shell
+exit()
+
+# 6. Ejecutar el Servidor de Desarrollo
+python manage.py runserver
+
+# 🚪 Salir del Entorno Virtual
+deactivate
+
+# 🧪 EJECUTAR TESTS --------------------------------------------------------------------------------------
+
+# Correr todos los tests verbosamente
+pytest -v
+
+# Correr un test específico verbosamente
+pytest entradas/tests/test_comprar_entradas.py -v
+
+# Filtrar tests por nombre (ejemplo: tests que contengan 'comprar')
+pytest -k comprar -v
+
+# Mostrar solo los tests que pasaron (usando filtro de pytest)
+# (La opción 'findstr' es específica de Windows Cmd)
+pytest -v -rP # -rP muestra resumen de PASSED
+
+# 💾 GUÍA PARA MANEJAR LA BASE DE DATOS ------------------------------------------------------------------
+
+# Creación Inicial
+Ya cubierta en el paso 4 de la configuración (makemigrations, migrate).
+
+# 💡 Mantener la Base de Datos Actualizada
+
+# Cuando un desarrollador modifica los modelos (models.py):
 python manage.py makemigrations
-
-Aplicarlas localmente:
 python manage.py migrate
-
-Subir los archivos de migración:
 git add .
-git commit -m "Agrega migraciones para los nuevos modelos"
+git commit -m "Agrega migraciones para [breve descripción del cambio]"
 git push
 
-Los demás solo deben hacer:
+# Cuando otro desarrollador obtiene estos cambios:
 git pull
 python manage.py migrate
 
-Esto actualizará su base local automáticamente al nuevo esquema.
+# 💡 Regenerar la Base de Datos desde Cero
 
-💡 Consejo útil
+Asegúrate de que tu entorno virtual esté activo.
+Elimina el archivo db.sqlite3.
 
-Si tu base se desconfigura o querés regenerarla desde cero:
+# En Windows (PowerShell)
+Remove-Item db.sqlite3
+# En Linux/macOS/Git Bash
 rm db.sqlite3
+
+# Aplica todas las migraciones existentes:
 python manage.py migrate
+python manage.py loaddata initial_data.json
+
+# (Opcional) Vuelve a crear el usuario por defecto si lo necesitas (ver paso 5 de configuració
