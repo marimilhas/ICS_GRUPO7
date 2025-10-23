@@ -1,7 +1,8 @@
 from django.urls import path
 from . import views
+from .views import comprar_entradas_view
 
 urlpatterns = [
-    path('compras/', views.CompraCreateView.as_view(), name='comprar_entradas'),
-    path('pases/', views.PaseListView.as_view(), name='lista_pases'),  # Para cargar pases
+    # Esta ruta se resuelve como: /api/ + comprar/ = /api/comprar/
+    path('comprar/', comprar_entradas_view, name='comprar_entradas'),
 ]
