@@ -68,7 +68,7 @@ class CompraSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Compra
-        fields = '_all_'
+        fields = '__all__'
     
     def get_entradas(self, obj):
         from .serializers import EntradaSerializer 
