@@ -29,7 +29,7 @@ const ResumenCompra = ({ compra, onEditar, onConfirmar, procesandoPago }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-green-pale/25 p-4 rounded-lg">
             <h3 className="font-semibold text-green-dark mb-2">Fecha de Visita</h3>
-            <p className="text-lg">{new Date(compra.fecha).toLocaleDateString('es-ES')}</p>
+            <p className="text-lg">{new Date(compra.fecha.replace(/-/g, '/')).toLocaleDateString('es-ES')}</p>
           </div>
 
           <div className="bg-green-pale/25 p-4 rounded-lg">
