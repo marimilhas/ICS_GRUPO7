@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 class PaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pase
-        fields = '_all_'
+        fields = '__all__'
 
 # --- Serializador Corregido para Entrada ---
 
