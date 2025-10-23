@@ -99,24 +99,6 @@ const ResumenCompra = ({ compra, onEditar, onConfirmar, procesandoPago }) => {
             )}
           </ul>
         </div>
-
-        {/* Botones de acción */}
-        <div className="flex gap-4 pt-4">
-          <button
-            onClick={onEditar}
-            className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 rounded-lg transition-colors"
-            disabled={procesandoPago} // 💡 Deshabilitar
-          >
-            Editar Compra
-          </button>
-          <button
-            onClick={onConfirmar}
-            className="flex-1 bg-green-forest hover:bg-green-dark text-white font-medium py-3 rounded-lg transition-colors"
-            disabled={procesandoPago} // 💡 Deshabilitar
-          >
-            Confirmar Compra
-          </button>
-        </div>
       </div>
     </div>
   );
