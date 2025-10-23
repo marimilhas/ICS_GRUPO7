@@ -1,6 +1,7 @@
+# entradas/urls.py
 from django.urls import path
-from . import views
+from .views import comprar_entradas_view
 
 urlpatterns = [
-    # De momento vacío, lo llenaremos con las vistas de la User Story
+    path('comprar/', comprar_entradas_view, name='comprar_entradas'),
 ]

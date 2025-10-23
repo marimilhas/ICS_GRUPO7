@@ -13,7 +13,7 @@ from ..excepciones import *
 from ..models import Compra, Entrada
 from ..servicio_compra import ServicioCompraEntradas
 from ..repositories import PaseRepository  # Necesitas esta importación
-from ..models import Pase
+from ..models import Pase, EstadosPago
 
 
 # --- FIXTURES ---
@@ -1070,7 +1070,7 @@ def test_gestionar_pago_forma_pago_efectivo_pasa(servicio_compra):
 
     pago_exitoso = servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_pago)
 
-    assert pago_exitoso is True
+    assert pago_exitoso == EstadosPago.PENDIENTE.value
     servicio_compra.pasarela_pagos.procesar_pago.assert_not_called()
 
 
@@ -1082,7 +1082,7 @@ def test_gestionar_pago_forma_pago_tarjeta_pasa(servicio_compra):
 
     pago_exitoso = servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_pago)
 
-    assert pago_exitoso is True
+    assert pago_exitoso == EstadosPago.PAGADO.value
     servicio_compra.pasarela_pagos.procesar_pago.assert_called_once_with(monto=monto_ejemplo)
 
 
@@ -1092,7 +1092,7 @@ def test_gestionar_pago_forma_pago_tarjeta_rechazada_falla(servicio_compra):
     tipo_pago = "Tarjeta"
     servicio_compra.pasarela_pagos.procesar_pago.return_value = False
 
-    with pytest.raises(PagoRechazadoError, match="El pago fue rechazado"):
+    with pytest.raises(PagoRechazadoError, match="El pago con tarjeta fue rechazado"):
         servicio_compra._gestionar_pago(monto_total=monto_ejemplo, tipo_pago=tipo_pago)
 
     servicio_compra.pasarela_pagos.procesar_pago.assert_called_once_with(monto=monto_ejemplo)
@@ -1233,6 +1233,8 @@ def test_validar_formato_usuario_tipo_incorrecto_falla(servicio_compra):
     with pytest.raises(ValueError, match="El atributo 'esta_registrado' debe ser de tipo bool"):
         servicio_compra._validar_formato_usuario(usuario_invalido)
 
+
+
     # DEJO LA ALTERNATIVA POR SI NO SE PUEDE SIMULAR EL OBJETO USUARIO EN EL FRONTEND
 
 # # --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMATO DE EMAIL ---
@@ -1273,3 +1275,28 @@ def test_validar_formato_usuario_tipo_incorrecto_falla(servicio_compra):
 #     """ Falla si no es un string. """
 #     with pytest.raises(ValueError, match="El email debe ser texto"):
 #         servicio_compra._validar_formato_email(12345)
+
+# --- PRUEBAS UNITARIAS: VALIDACIÓN DE FORMA DE PAGO ---
+
+def test_validar_forma_pago_valido_pasa(servicio_compra):
+    """ Pasa si el tipo de pago es Tarjeta o Efectivo (valores válidos). """
+    try:
+        servicio_compra._validar_forma_pago("Tarjeta")
+        servicio_compra._validar_forma_pago("Efectivo")
+    except ValueError:
+        pytest.fail("La validación de forma de pago no debería haber fallado con valores válidos.")
+
+def test_validar_forma_pago_none_falla(servicio_compra):
+    """ Falla si tipo_pago es None (CdE: Ausencia de valor). """
+    with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
+        servicio_compra._validar_forma_pago(None)
+
+def test_validar_forma_pago_vacio_falla(servicio_compra):
+    """ Falla si tipo_pago es string vacío/solo espacios (CdE: Formato inválido). """
+    with pytest.raises(ValueError, match="Forma de pago inválida: No especificada"):
+        servicio_compra._validar_forma_pago(" ")
+
+def test_validar_forma_pago_invalido_falla(servicio_compra):
+    """ Falla si el valor es un string no reconocido (CdE: Valor fuera de rango). """
+    with pytest.raises(ValueError, match="Forma de pago inválida: 'Cheque' no reconocido"):
+        servicio_compra._validar_forma_pago("Cheque")

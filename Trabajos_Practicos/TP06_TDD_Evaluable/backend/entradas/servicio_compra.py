@@ -45,6 +45,8 @@ class ServicioCompraEntradas:
         self._validar_formato_pases(visitantes)
         self._validar_valores_pases(visitantes)
 
+        forma_pago_codigo = self._validar_forma_pago(tipo_pago)
+
         # 2. Cálculo del Monto
         monto_total = self._calcular_monto_total(visitantes)
 
@@ -58,7 +60,7 @@ class ServicioCompraEntradas:
             usuario=usuario,
             fecha_visita=fecha_dt,
             monto_total=monto_total,
-            forma_pago=tipo_pago,
+            forma_pago=forma_pago_codigo,
             estado_pago=estado_compra,
         )
 
@@ -88,6 +90,8 @@ class ServicioCompraEntradas:
 
     def _get_pago_strategy(self, tipo_pago: str) -> IEstrategiaPago:
         """Determina y retorna la estrategia de pago basada en el tipo."""
+        if tipo_pago is None:
+            raise ValueError("Forma de pago inválida: No especificada")
 
         tipo_pago_norm = tipo_pago.strip().capitalize()
 
@@ -102,7 +106,7 @@ class ServicioCompraEntradas:
     def _gestionar_pago(self, monto_total: float, tipo_pago: str) -> str:
         """
         Aplica el patrón Strategy para procesar el pago.
-        Retorna el estado de la compra ('Pagada' o 'Pendiente').
+        Retorna el estado de la compra (ej. 'PAG', 'PEN').
         """
         # La validación de None/vacío se hace en comprar_entradas.
         estrategia = self._get_pago_strategy(tipo_pago)
@@ -282,17 +286,38 @@ class ServicioCompraEntradas:
             # Si el bucle termina sin errores, los formatos son válidos.
         return True
 
-    def _validar_formato_tipo_pago(self, tipo_pago: str):
+    def _validar_forma_pago(self, tipo_pago: str) -> str:
         """
-        Valida que el tipo de pago sea un string no vacío o None.
-        La validación de VALOR (Tarjeta/Efectivo) la hace _get_pago_strategy.
+        Valida que el tipo de pago sea una cadena válida ('Tarjeta' o 'Efectivo')
+        y devuelve el código correspondiente definido en Compra.FormasPago.
         """
-        if tipo_pago is None or (isinstance(tipo_pago, str) and not tipo_pago.strip()):
+        # 1. Manejar None y validar tipo ANTES de strip()
+        if tipo_pago is None:
+            # Corregido el mensaje para que coincida con la aserción del test.
             raise ValueError("Forma de pago inválida: No especificada")
+
         if not isinstance(tipo_pago, str):
-            # Opcional, pero consistente: asegurar que es texto
+            # Tu test no prueba esto directamente, pero está bien mantenerlo.
             raise ValueError("La forma de pago debe ser un texto.")
-        return True
+
+        # 2. Manejar string vacío después de strip()
+        tipo_pago = tipo_pago.strip()
+        if not tipo_pago:
+            # Corregido el mensaje para que coincida con la aserción del test.
+            raise ValueError("Forma de pago inválida: No especificada")
+            # El test pide 'No especificada' para vacío/none.
+            # Alternativa: raise ValueError("Forma de pago inválida: valor vacío o nulo.")
+
+        tipo_pago_lower = tipo_pago.lower()
+
+        if tipo_pago_lower == "tarjeta":
+            return Compra.FormasPago.TARJETA  # "TAR"
+        elif tipo_pago_lower == "efectivo":
+            return Compra.FormasPago.EFECTIVO  # "EFE"
+        else:
+            # Corregido el mensaje para que coincida con la aserción del test.
+            raise ValueError(f"Forma de pago inválida: '{tipo_pago}' no reconocido")
+
 
     def _validar_formato_usuario(self, usuario):
         """
@@ -334,37 +359,6 @@ class ServicioCompraEntradas:
             raise PermissionError("Usuario no registrado")
 
         return True
-
-    def _gestionar_pago(self, monto_total: float, tipo_pago: str) -> bool:
-        """
-        Procesa el pago (llama a pasarela si es Tarjeta) o lo registra (si es Efectivo).
-        """
-
-        # Validar que se haya especificado una forma de pago
-        if tipo_pago is None:
-            raise ValueError("Forma de pago inválida: No especificada")
-
-        # Normalizamos el texto para evitar errores por mayúsculas/minúsculas
-        tipo_pago = tipo_pago.strip().capitalize()
-
-        # Manejar los distintos tipos de pago
-        if tipo_pago == "Efectivo":
-            # No se llama a la pasarela de pagos
-            return True
-
-        elif tipo_pago == "Tarjeta":
-            # Llama a la pasarela de pagos
-            resultado = self.pasarela_pagos.procesar_pago(monto=monto_total)
-
-            if resultado:
-                return True
-            else:
-                # Si la pasarela devuelve False, lanzar la excepción correspondiente
-                raise PagoRechazadoError("El pago fue rechazado")
-
-        else:
-            # Cualquier otro tipo de pago no reconocido
-            raise ValueError(f"Forma de pago inválida: '{tipo_pago}' no reconocido")
 
     def _enviar_confirmacion(self, usuario: User, compra):
         """
